@@ -1,4 +1,5 @@
 #include <headers/json.hpp>
+#include <headers/snow.h>
 #include <iostream>
 #include <fstream>
 
@@ -19,10 +20,10 @@ int make_json() {
     }
 }
 
-void add_keyframe(Particle particle) {
+void add_keyframe(Snow::Particle particle) {
 
 }
 
-void add_particle(Particle particle) {
+void add_particle(Snow::Particle particle) {
     
 }
