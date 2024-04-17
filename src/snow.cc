@@ -13,7 +13,8 @@ Snow::Snow() {
         p->position = Vector3f(-0.5 + (1 / (i % 100)), -0.5 + (1 / (int)((i / 100))), 1);
         p->velocity = Vector3f::Zero(); // zero for now
         p->mass = 1.0;
-        p->deformation_gradient = Matrix3f::Identity();
+        p->deformation_gradient_elastic = Matrix3f::Identity();
+        p->deformation_gradient_plastic = Matrix3f::Zero();
         m_particles[i] = p;
     }
 }
@@ -69,6 +70,19 @@ float Snow::particle_weight(Vector3f grid_index, Vector3f evaluation_position){
     return n_x * n_y * n_z;
 }
 
+Vector3f Snow::particle_weight_gradient(Vector3f grid_index, Vector3f evaluation_position){
+    // calculating the gradient of the influence of grid cell at grid_index on evaluation_position
+    float h = m_grid_spacing; // h represents the grid spacing
+    float n_x = calculate_n((evaluation_position.x() - (grid_index.x() * h)) / h);
+    float n_y = calculate_n((evaluation_position.y() - (grid_index.y() * h)) / h);
+    float n_z = calculate_n((evaluation_position.z() - (grid_index.z() * h)) / h);
+    float n_x_grad = calculate_n_prime((evaluation_position.x() - (grid_index.x() * h)) / h);
+    float n_y_grad = calculate_n_prime((evaluation_position.y() - (grid_index.y() * h)) / h);
+    float n_z_grad = calculate_n_prime((evaluation_position.z() - (grid_index.z() * h)) / h);
+    return Vector3f(n_x_grad * n_y * n_z, n_x * n_y_grad * n_z, n_x * n_y * n_z_grad);
+
+}
+
 float Snow::calculate_n(float x){
     if (0 <= abs(x) && abs(x) < 1){
         return (0.5 * pow(abs(x), 3)) - pow(abs(x), 2) + (2.f / 3.f);
@@ -79,6 +93,19 @@ float Snow::calculate_n(float x){
     else {
         return 0;
     }
+}
+
+float Snow::calculate_n_prime(float x){
+    if (0 <= abs(x) && abs(x) < 1){
+        return (1.5 * pow(abs(x), 2)) - (2 * abs(x));
+    }
+    else if (1 <= abs(x) && abs(x) < 2){
+        return ((-0.5) * pow(abs(x), 2)) + (2 * abs(x)) - 2;
+    }
+    else {
+        return 0;
+    }
+
 }
 
 void Snow::compute_cell_densities(){
@@ -97,6 +124,20 @@ void Snow::compute_particle_volumes(){
         }
         particle->density = density;
         particle->volume = particle->mass / particle->density;
+    }
+}
+
+void Snow::compute_grid_forces(){
+    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+        GridCell* cell = m_grid[grid_index];
+        Vector3f force = Vector3f::Zero();
+        for (int particle_index = 0; particle_index < m_num_particles; particle_index++){
+            Particle* particle = m_particles[particle_index];
+            force += -particle->volume * 1 * particle_weight_gradient(cell->grid_index, particle->position);
+            // placeholders for now. particle->volume needs to be multiplied by the determinant of the particle's plastic deformation gradient
+            // and the 1 is the complicated thing
+        }
+        cell->velocity += force / cell->mass;
     }
 }
 
