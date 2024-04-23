@@ -21,7 +21,7 @@ def setup_camera(camera_data):
         camera.name = "Camera"
     
     camera.location = tuple(camera_data['position'])
-    camera.rotation_euler = tuple(camera_data['rotation'][0], camera_data['rotation'][1], camera_data['rotation'][2])
+    camera.rotation_euler = tuple(camera_data['rotation'])
     camera.data.angle = camera_data['fov'] * (3.14159 / 180)
 
 def create_particle(particle_data):
@@ -33,7 +33,7 @@ def create_particle(particle_data):
     obj.scale = tuple(particle_data['scale'])
 
     mat = bpy.data.materials.new(name=f"{particle_data['name']}_Material")
-    mat.diffuse_color = particle_data['color'] + [1.0]
+    mat.diffuse_color = particle_data['color']
     obj.data.materials.append(mat)
 
     for anim in particle_data['animation']:
@@ -52,7 +52,7 @@ def setup_ground(ground_data):
     ground.data.materials.append(mat)
 
 def main():
-    filename = bpy.path.abspath('//data/simulation.json')
+    filename = bpy.path.abspath('//../data/simulation.json')
     data = load_json_data(filename)
 
     setup_scene(data['scene_setup'])

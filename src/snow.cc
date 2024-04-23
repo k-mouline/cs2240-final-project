@@ -4,13 +4,14 @@
 #include <fstream>
 
 Snow::Snow() {
-    m_particles = std::vector<Particle*>(m_num_particles, nullptr);
-    m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size, nullptr);
+    m_particles = std::vector<Particle*>();
+    m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size);
 
     for (int i = 0; i < m_num_particles; i++) {
         Particle* p = new Particle;
         p->id = i;
-        p->position = Vector3f(-0.5 + (1.0 / (i % 100)), -0.5 + (1.0 / (i / 100)), 1);
+        int spacing = sqrt(m_num_particles);
+        p->position = Vector3f(((i % spacing) / (float)(spacing)), ((i / spacing) / (float)(spacing)), 1);
         p->velocity = Vector3f::Zero();
         p->mass = 1.0;
         p->deformation_gradient_elastic = Matrix3f::Identity();
@@ -93,19 +94,10 @@ Vector3f Snow::particle_weight_gradient(Vector3f grid_index, Vector3f evaluation
     return Vector3f(n_x_grad * n_y * n_z, n_x * n_y_grad * n_z, n_x * n_y * n_z_grad);
 }
 
-Vector3f Snow::particle_velocity_gradient(Vector3f evaluation_position){
-    Vector3f gradient = Vector3f::Zero();
-    for (int i = -1; i < 2; i++){
-        for (int j = -1; j < 2; j++){
-            for (int k = -1; k < 2; k++){
-                Vector3f grid_index = Vector3f(evaluation_position.x() + i, evaluation_position.y() + j, evaluation_position.z() + k);
-                if (grid_index.x() >= 0 && grid_index.x() < m_grid_size && grid_index.y() >= 0 && 
-                    grid_index.y() < m_grid_size && grid_index.z() >= 0 && grid_index.z() < m_grid_size){
-                    int grid_index_int = get_grid_index(grid_index);
-                    gradient += m_grid[grid_index_int]->velocity_star * (particle_weight_gradient(grid_index, evaluation_position)).transpose();
-                }
-            }
-        }
+Matrix3f Snow::particle_velocity_gradient(Vector3f evaluation_position){
+    Matrix3f gradient = Matrix3f::Zero();
+    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+        gradient += m_grid[grid_index]->velocity_star * (particle_weight_gradient(m_grid[grid_index]->grid_index, evaluation_position)).transpose();
     }
     return gradient;
 }
@@ -145,19 +137,10 @@ void Snow::compute_cell_densities(){
 void Snow::compute_particle_volumes(){
     for (int particle_index = 0; particle_index < m_num_particles; particle_index++){
         Particle* particle = m_particles[particle_index];
-        Vector3f grid_coords = get_grid_coords(particle->position);
         float density = 0;
-        for (int i = -1; i < 2; i++){
-            for (int j = -1; j < 2; j++){
-                for (int k = -1; k < 2; k++){
-                    Vector3f grid_index = Vector3f(grid_coords.x() + i, grid_coords.y() + j, grid_coords.z() + k);
-                    if (grid_index.x() >= 0 && grid_index.x() < m_grid_size && grid_index.y() >= 0 && 
-                        grid_index.y() < m_grid_size && grid_index.z() >= 0 && grid_index.z() < m_grid_size){
-                        int grid_index_int = get_grid_index(grid_index);
-                        density += m_grid[grid_index_int]->density * particle_weight(m_grid[grid_index_int]->grid_index, particle->position);
-                    }
-                }
-            }
+        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+            GridCell* cell = m_grid[grid_index];
+            density += cell->density * particle_weight(cell->grid_index, particle->position);
         }
         particle->density = density;
         particle->volume = particle->mass / particle->density;
@@ -193,7 +176,7 @@ void Snow::update_deformation_gradient(){
     for (int particle_index = 0; particle_index < m_particles.size(); particle_index++){
         Particle* particle = m_particles[particle_index];
         // temporarily define the parts of the deformation gradient
-        Matrix3f next_deformation_gradient_elastic = (Matrix3f::Identity() + m_timestep * particle_velocity_gradient(particle->position)) * particle->deformation_gradient_elastic;
+        Matrix3f next_deformation_gradient_elastic = (Matrix3f::Identity() + (m_timestep * particle_velocity_gradient(particle->position))) * particle->deformation_gradient_elastic;
         Matrix3f next_deformation_gradient_plastic = particle->deformation_gradient_plastic;
         Matrix3f next_deformation_gradient = next_deformation_gradient_elastic * next_deformation_gradient_plastic;
 
@@ -201,9 +184,10 @@ void Snow::update_deformation_gradient(){
         JacobiSVD<Matrix3f> svd(next_deformation_gradient_elastic, ComputeFullU | ComputeFullV);
         Matrix3f u_matrix = svd.matrixU();
         Matrix3f v_matrix = svd.matrixV();
-        Vector3f singular_values = svd.singularValues();
+        Matrix3f singular_values = Matrix3f::Zero();
+        singular_values.diagonal() = svd.singularValues();
 
-        next_deformation_gradient_elastic = u_matrix * singular_values * v_matrix.transpose();
+        next_deformation_gradient_elastic = (u_matrix * singular_values) * v_matrix.transpose();
         next_deformation_gradient_plastic = v_matrix * singular_values.inverse() * u_matrix.transpose() * next_deformation_gradient;
 
         particle->deformation_gradient_elastic = next_deformation_gradient_elastic;
@@ -214,23 +198,14 @@ void Snow::update_deformation_gradient(){
 void Snow::update_particle_velocities(){
     for (int particle_index = 0; particle_index < m_particles.size(); particle_index++){
         Particle* particle = m_particles[particle_index];
-        Vector3f grid_coords = get_grid_coords(particle->position);
         Vector3f velocity_pic = Vector3f::Zero();
         Vector3f velocity_flip = particle->velocity;
-        for (int i = -1; i < 2; i++){
-            for (int j = -1; j < 2; j++){
-                for (int k = -1; k < 2; k++){
-                    Vector3f grid_index = Vector3f(grid_coords.x() + i, grid_coords.y() + j, grid_coords.z() + k);
-                    if (grid_index.x() >= 0 && grid_index.x() < m_grid_size && grid_index.y() >= 0 && 
-                        grid_index.y() < m_grid_size && grid_index.z() >= 0 && grid_index.z() < m_grid_size){
-                        int grid_index_int = get_grid_index(grid_index);
-                        velocity_pic += m_grid[grid_index_int]->velocity * particle_weight(grid_index, particle->position);
-                        velocity_flip += (m_grid[grid_index_int]->velocity_star - m_grid[grid_index_int]->velocity) * particle_weight(grid_index, particle->position);
-                    }
-                }
-            }
+        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+            GridCell* cell = m_grid[grid_index];
+            velocity_pic += cell->velocity * particle_weight(cell->grid_index, particle->position);
+            velocity_flip += (cell->velocity_star - cell->velocity) * particle_weight(cell->grid_index, particle->position);
         }
-        particle->velocity = ((1 - m_alpha) * velocity_pic) + (m_alpha * velocity_flip);
+        particle->velocity = ((1 - m_alpha) * velocity_pic) + (m_alpha * velocity_flip);    
     }
 }
 
@@ -254,29 +229,29 @@ void Snow::update(){
         m_first = false;
     }
 
-    // STEP 3: Compute grid forces
+    // // STEP 3: Compute grid forces
     compute_grid_forces();
 
-    // STEP 4: Update velocities on grid
+    // // STEP 4: Update velocities on grid
     update_grid_velocity();
 
-    // TODO
-    // STEP 5: Grid based body collisions
+    // // TODO
+    // // STEP 5: Grid based body collisions
 
-    // TODO 
-    // STEP 6: Solve the linear system
-    // for now, we let v_i^n+1 = v_i^*
+    // // TODO 
+    // // STEP 6: Solve the linear system
+    // // for now, we let v_i^n+1 = v_i^*
 
-    // TODO
-    // STEP 7: Update deformation gradient
+    // // TODO
+    // // STEP 7: Update deformation gradient
     update_deformation_gradient();
 
-    // STEP 8: Update particle velocities
+    // // STEP 8: Update particle velocities
     update_particle_velocities();
 
-    // TODO
-    // STEP 9: Particle-based body collisions
+    // // TODO
+    // // STEP 9: Particle-based body collisions
 
-    // STEP 10: Update particle positions
+    // // STEP 10: Update particle positions
     update_particle_positions();
 }

@@ -26,8 +26,8 @@ void Snow::create_initial_json(json &j) {
   j["scene_setup"]["frame_rate"] = 24;
 
   // camera data
-  j["camera"]["position"] = {0, 10, 20};
-  j["camera"]["rotation"] = {-0.3, 0, 0};
+  j["camera"]["position"] = {10, 10, 10};
+  j["camera"]["rotation"] = {0, 0, 0};
   j["camera"]["fov"] = 60;
 
   // particles is an array of objects of size m_num_particles
@@ -35,7 +35,7 @@ void Snow::create_initial_json(json &j) {
 
   // ground data
   j["ground"]["type"] = "plane";
-  j["ground"]["position"] = {0, -10, 0};
+  j["ground"]["position"] = {0, 0, -5};
   j["ground"]["scale"] = {50, 1, 50};
   j["ground"]["material"]["color"] = {1, 1, 1};
   j["ground"]["material"]["roughness"] = 0.9;
@@ -79,7 +79,7 @@ void Snow::add_particle_keyframe(nlohmann::json &j, vector<Particle*> particles,
       {"frame", frame},
       {"position", {p->position.x(), p->position.y(), p->position.z()}}
     };
-    j["particles"][std::to_string(p->id)]["animation"].push_back(keyframe);
+    j["particles"][p->id]["animation"].push_back(keyframe);
   }
 }
 

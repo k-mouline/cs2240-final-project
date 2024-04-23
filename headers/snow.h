@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Eigen/StdVector"
-#include "Eigen/SVD"
+// #include "Eigen/StdVector"
+#include "Eigen"
 #include "json.hpp"
 
 #include <vector>
@@ -37,7 +37,7 @@ class Snow {
         void rasterize_grid();
         float particle_weight(Vector3f grid_index, Vector3f evaluation_position);
         Vector3f particle_weight_gradient(Vector3f grid_index, Vector3f evaluation_position);
-        Vector3f particle_velocity_gradient(Vector3f evaluation_position);
+        Matrix3f particle_velocity_gradient(Vector3f evaluation_position);
         float calculate_n(float x);
         float calculate_n_prime(float x);
         void compute_cell_densities();
@@ -61,11 +61,11 @@ class Snow {
     private:
         vector<Particle*> m_particles;
         vector<GridCell*> m_grid;
-        int m_num_particles = 1000;
-        int m_grid_size = 10;
-        int m_grid_spacing = 2.0 / m_grid_size;
-        Vector3f m_gravity = Vector3f(0, -9.8, 0);
+        int m_num_particles = 1600; // must be perfect square
+        int m_grid_size = 2;
+        float m_grid_spacing = 2.0 / m_grid_size;
+        Vector3f m_gravity = Vector3f(0, 0, -9.8);
         bool m_first = true;
-        float m_timestep = 0.01;
+        float m_timestep = 0.1;
         float m_alpha = 0.95;
 };
