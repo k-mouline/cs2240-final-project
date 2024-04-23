@@ -3,20 +3,42 @@
 #include <iostream>
 #include <fstream>
 
-
 Snow::Snow() {
-    // initialize some particles
-    m_particles = vector<Particle*>(m_num_particles);
-    m_grid = vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size);
-    for (int i = 0; i < m_num_particles; i++){
-        Particle* p;
-        p->position = Vector3f(-0.5 + (1 / (i % 100)), -0.5 + (1 / (int)((i / 100))), 1);
-        p->velocity = Vector3f::Zero(); // zero for now
+    m_particles = std::vector<Particle*>(m_num_particles, nullptr);
+    m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size, nullptr);
+
+    for (int i = 0; i < m_num_particles; i++) {
+        Particle* p = new Particle;
+        p->id = i;
+        p->position = Vector3f(-0.5 + (1.0 / (i % 100)), -0.5 + (1.0 / (i / 100)), 1);
+        p->velocity = Vector3f::Zero();
         p->mass = 1.0;
         p->deformation_gradient_elastic = Matrix3f::Identity();
         p->deformation_gradient_plastic = Matrix3f::Identity();
-        m_particles[i] = p;
+        m_particles.push_back(p);
     }
+
+    int totalCells = m_grid_size * m_grid_size * m_grid_size;
+    for (int index = 0; index < totalCells; index++) {
+        GridCell* cell = new GridCell;
+        cell->grid_index = Vector3f(index % m_grid_size, (index / m_grid_size) % m_grid_size, index / (m_grid_size * m_grid_size));
+        cell->mass = 0;
+        cell->velocity = Vector3f::Zero();
+        cell->force = Vector3f::Zero();
+        m_grid[index] = cell;
+    }
+}
+
+Snow::~Snow() {
+    for (Particle* particle : m_particles) {
+        delete particle;
+    }
+    m_particles.clear();
+
+    for (GridCell* cell : m_grid) {
+        delete cell;
+    }
+    m_grid.clear();
 }
 
 Vector3f Snow::get_grid_coords(Vector3f position){
@@ -27,18 +49,6 @@ Vector3f Snow::get_grid_coords(Vector3f position){
 int Snow::get_grid_index(Vector3f grid_coords){
     // gets the index of the grid cell based off of its coordinates
     return grid_coords.x() + grid_coords.y() * m_grid_size + grid_coords.z() * m_grid_size * m_grid_size;
-}
-
-void Snow::set_up_grid(){
-    // first we want to set up each grid cell
-    for (int index = 0; index < m_grid.size(); index++){
-        GridCell* cell;
-        cell->grid_index = Vector3f(index % m_grid_size, (index / m_grid_size) % m_grid_size, index / (m_grid_size * m_grid_size));
-        cell->mass = 0;
-        cell->velocity = Vector3f::Zero();
-        cell->force = Vector3f::Zero();
-        m_grid[index] = cell;
-    }
 }
 
 void Snow::rasterize_grid(){
