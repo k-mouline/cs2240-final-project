@@ -37,7 +37,7 @@ void Snow::create_initial_json(json &j) {
   j["ground"]["type"] = "plane";
   j["ground"]["position"] = {0, 0, -5};
   j["ground"]["scale"] = {50, 1, 50};
-  j["ground"]["material"]["color"] = {1, 1, 1};
+  j["ground"]["material"]["color"] = {1, 1, 1, 1};
   j["ground"]["material"]["roughness"] = 0.9;
   j["ground"]["material"]["metallic"] = 0.0;
 }
