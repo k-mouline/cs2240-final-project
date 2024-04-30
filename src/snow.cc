@@ -31,40 +31,38 @@ Snow::Snow() {
 }
 
 Snow::~Snow() {
-    for (Particle* particle : m_particles) {
+    for (Particle* particle : m_particles)
         delete particle;
-    }
     m_particles.clear();
 
-    for (GridCell* cell : m_grid) {
+    for (GridCell* cell : m_grid)
         delete cell;
-    }
     m_grid.clear();
 }
 
-Vector3f Snow::get_grid_coords(Vector3f position){
+Vector3f Snow::get_grid_coords(Vector3f position) {
     // gets the appropriate grid coordinates for a particle based off of its position
     return Vector3f(m_grid_size * (position.x() + 1) / 2, m_grid_size * (position.y() + 1) / 2, m_grid_size * (position.z() + 1) / 2);
 }
 
-int Snow::get_grid_index(Vector3f grid_coords){
+int Snow::get_grid_index(Vector3f grid_coords) {
     // gets the index of the grid cell based off of its coordinates
     return grid_coords.x() + grid_coords.y() * m_grid_size + grid_coords.z() * m_grid_size * m_grid_size;
 }
 
-void Snow::rasterize_grid(){
+void Snow::rasterize_grid() {
     // first step is to rasterize particles into grid cells
-    for (int grid_cell = 0; grid_cell < m_grid.size(); grid_cell++){
+    for (int grid_cell = 0; grid_cell < m_grid.size(); grid_cell++) {
         // for each grid cell, we need to calculate the mass and velocity
         float mass = 0;
         Vector3f velocity = Vector3f::Zero();
         // sum across the particles
-        for (int particle_index = 0; particle_index < m_num_particles; particle_index++){
+        for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
             Particle* particle = m_particles[particle_index];
             mass += particle->mass + particle_weight(m_grid[grid_cell]->grid_index, particle->position);
         }
         // need to calculate velocity after since we need the normalization factor from the mass
-        for (int particle_index = 0; particle_index < m_num_particles; particle_index++){
+        for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
             Particle* particle = m_particles[particle_index];
             velocity += particle->mass * particle->velocity * particle_weight(m_grid[grid_cell]->grid_index, particle->position) / mass;
         }
@@ -73,7 +71,7 @@ void Snow::rasterize_grid(){
     }
 }
 
-float Snow::particle_weight(Vector3f grid_index, Vector3f evaluation_position){
+float Snow::particle_weight(Vector3f grid_index, Vector3f evaluation_position) {
     // calcualting the influence of grid cell at grid_index on evaluation_position
     float h = m_grid_spacing; // h represents the grid spacing
     float n_x = calculate_n((evaluation_position.x() - (grid_index.x() * h)) / h);
@@ -82,7 +80,7 @@ float Snow::particle_weight(Vector3f grid_index, Vector3f evaluation_position){
     return n_x * n_y * n_z;
 }
 
-Vector3f Snow::particle_weight_gradient(Vector3f grid_index, Vector3f evaluation_position){
+Vector3f Snow::particle_weight_gradient(Vector3f grid_index, Vector3f evaluation_position) {
     // calculating the gradient of the influence of grid cell at grid_index on evaluation_position
     float h = m_grid_spacing; // h represents the grid spacing
     float n_x = calculate_n((evaluation_position.x() - (grid_index.x() * h)) / h);
@@ -94,51 +92,43 @@ Vector3f Snow::particle_weight_gradient(Vector3f grid_index, Vector3f evaluation
     return Vector3f(n_x_grad * n_y * n_z, n_x * n_y_grad * n_z, n_x * n_y * n_z_grad);
 }
 
-Matrix3f Snow::particle_velocity_gradient(Vector3f evaluation_position){
+Matrix3f Snow::particle_velocity_gradient(Vector3f evaluation_position) {
     Matrix3f gradient = Matrix3f::Zero();
-    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++)
         gradient += m_grid[grid_index]->velocity_star * (particle_weight_gradient(m_grid[grid_index]->grid_index, evaluation_position)).transpose();
-    }
     return gradient;
 }
 
-float Snow::calculate_n(float x){
-    if (0 <= abs(x) && abs(x) < 1){
+float Snow::calculate_n(float x) {
+    if (0 <= abs(x) && abs(x) < 1)
         return (0.5 * pow(abs(x), 3)) - pow(abs(x), 2) + (2.f / 3.f);
-    }
-    else if (1 <= abs(x) && abs(x) < 2){
+    else if (1 <= abs(x) && abs(x) < 2)
         return ((-1.f / 6.f) * pow(abs(x), 3)) + pow(abs(x), 2) - (2 * abs(x)) + (4.f / 3.f);
-    }
-    else {
+    else
         return 0;
-    }
 }
 
-float Snow::calculate_n_prime(float x){
-    if (0 <= abs(x) && abs(x) < 1){
+float Snow::calculate_n_prime(float x) {
+    if (0 <= abs(x) && abs(x) < 1)
         return (1.5 * pow(abs(x), 2)) - (2 * abs(x));
-    }
-    else if (1 <= abs(x) && abs(x) < 2){
+    else if (1 <= abs(x) && abs(x) < 2)
         return ((-0.5) * pow(abs(x), 2)) + (2 * abs(x)) - 2;
-    }
-    else {
+    else
         return 0;
-    }
-
 }
 
-void Snow::compute_cell_densities(){
-    for (int index = 0; index < m_grid.size(); index++){
+void Snow::compute_cell_densities() {
+    for (int index = 0; index < m_grid.size(); index++) {
         GridCell* cell = m_grid[index];
         cell->density = cell->mass / pow(m_grid_spacing, 3);
     }
 }
 
-void Snow::compute_particle_volumes(){
-    for (int particle_index = 0; particle_index < m_num_particles; particle_index++){
+void Snow::compute_particle_volumes() {
+    for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
         Particle* particle = m_particles[particle_index];
         float density = 0;
-        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
             GridCell* cell = m_grid[grid_index];
             density += cell->density * particle_weight(cell->grid_index, particle->position);
         }
@@ -147,11 +137,11 @@ void Snow::compute_particle_volumes(){
     }
 }
 
-void Snow::compute_grid_forces(){
-    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+void Snow::compute_grid_forces() {
+    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
         GridCell* cell = m_grid[grid_index];
         Vector3f force = Vector3f::Zero();
-        for (int particle_index = 0; particle_index < m_num_particles; particle_index++){
+        for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
             Particle* particle = m_particles[particle_index];
             force += -particle->volume * 1 * particle_weight_gradient(cell->grid_index, particle->position);
             // placeholders for now. particle->volume needs to be multiplied by the determinant of the particle's plastic deformation gradient
@@ -161,10 +151,10 @@ void Snow::compute_grid_forces(){
     }
 }
 
-void Snow::update_grid_velocity(){
-    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+void Snow::update_grid_velocity() {
+    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
         GridCell* cell = m_grid[grid_index];
-        if (cell->mass != 0){
+        if (cell->mass != 0) {
             float inverse_mass = 1.f / cell->mass;
             cell->force += m_gravity * cell->mass;
             cell->velocity_star = cell->velocity + cell->force * inverse_mass * m_timestep;
@@ -172,8 +162,70 @@ void Snow::update_grid_velocity(){
     }
 }
 
-void Snow::update_deformation_gradient(){
-    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++){
+// void Snow::compute_grid_based_collisions() {
+//     for (GridCell* cell : m_grid) {
+//         Vector3f grid_index = cell->grid_index;
+//         Vector3f grid_pos = Vector3f(
+//             (grid_index.x() - m_grid_size / 2) * m_grid_spacing,
+//             (grid_index.y() - m_grid_size / 2) * m_grid_spacing,
+//             (grid_index.z() - m_grid_size / 2) * m_grid_spacing
+//         );
+//         if (grid_pos.z() <= 0) {
+//             float mu = 0.3f;
+//             Vector3f up = Vector3f(0,1,0);
+//             Vector3f v_rel = cell->velocity;
+//             float vn = v_rel.dot(up);
+//             if (vn < 0) {
+//                 Vector3f vt = v_rel - vn * up;
+//                 if (vt.norm() <= -mu * vn)
+//                     v_rel = Vector3f(0, 0, 0);
+//                 else
+//                     v_rel = vt + mu * vn * vt.normalized() / vt.norm();
+//                 cell->velocity = v_rel;
+//             }
+//         }
+//     }
+// }
+void Snow::compute_grid_based_collisions() {
+    float floor_height = 0.0;
+    float restitution_coefficient = 0.0;
+    float mu = 0.3f;
+
+    for (GridCell* cell : m_grid) {
+        Vector3f grid_index = cell->grid_index;
+        Vector3f grid_pos = Vector3f(
+            (grid_index.x() - m_grid_size / 2) * m_grid_spacing,
+            (grid_index.y() - m_grid_size / 2) * m_grid_spacing,
+            (grid_index.z() - m_grid_size / 2) * m_grid_spacing
+        );
+        if (grid_pos.z() <= floor_height) {
+            Vector3f v_rel = cell->velocity;
+            float vn = v_rel.z();
+
+            if (vn < 0) { // THIS VERSION IS FROM OUR FRIEND
+                v_rel.z() = -vn * restitution_coefficient;
+                Vector3f vt(v_rel.x(), v_rel.y(), 0);
+                if (vt.norm() > 0) {
+                    v_rel.x() -= mu * vn * vt.normalized().x();
+                    v_rel.y() -= mu * vn * vt.normalized().y();
+                }
+                cell->velocity = v_rel;
+            }
+//             if (vn < 0) { // THIS IS THE VERSION I WROTE THAT DIDNT REALLY WORK
+//                 Vector3f vt = v_rel - vn * up;
+//                 if (vt.norm() <= -mu * vn)
+//                     v_rel = Vector3f(0, 0, 0);
+//                 else
+//                     v_rel = vt + mu * vn * vt.normalized() / vt.norm();
+//                 cell->velocity = v_rel;
+//             }
+        }
+    }
+}
+
+
+void Snow::update_deformation_gradient() {
+    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++) {
         Particle* particle = m_particles[particle_index];
         // temporarily define the parts of the deformation gradient
         Matrix3f next_deformation_gradient_elastic = (Matrix3f::Identity() + (m_timestep * particle_velocity_gradient(particle->position))) * particle->deformation_gradient_elastic;
@@ -195,12 +247,12 @@ void Snow::update_deformation_gradient(){
     }
 }
 
-void Snow::update_particle_velocities(){
-    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++){
+void Snow::update_particle_velocities() {
+    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++) {
         Particle* particle = m_particles[particle_index];
         Vector3f velocity_pic = Vector3f::Zero();
         Vector3f velocity_flip = particle->velocity;
-        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
             GridCell* cell = m_grid[grid_index];
             velocity_pic += cell->velocity * particle_weight(cell->grid_index, particle->position);
             velocity_flip += (cell->velocity_star - cell->velocity) * particle_weight(cell->grid_index, particle->position);
@@ -209,49 +261,84 @@ void Snow::update_particle_velocities(){
     }
 }
 
-void Snow::update_particle_positions(){
-    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++){
+void Snow::compute_particle_based_collisions() {
+    float floor_height = 0.0;
+    float restitution_coefficient = 0.0;
+    float mu = 0.3f;
+
+    for (Particle* particle : m_particles) {
+        if (particle->position.z() <= floor_height) {
+            Vector3f v_rel = particle->velocity;
+            float vn = v_rel.z();
+
+            if (vn < 0) { // THIS VERSION IS FROM OUR FRIEND
+                v_rel.z() = -vn * restitution_coefficient;
+
+                Vector3f vt(v_rel.x(), v_rel.y(), 0);
+                if (vt.norm() > 0) {
+                    v_rel.x() -= mu * vn * vt.normalized().x();
+                    v_rel.y() -= mu * vn * vt.normalized().y();
+                }
+                particle->velocity = v_rel;
+            }
+//             if (vn < 0) { THIS IS WHAT I WROTE THAT DIDN'T RLY WORK
+//                 Vector3f vt = v_rel - vn * up;
+//                 if (vt.norm() <= -mu * vn)
+//                     v_rel = Vector3f(0, 0, 0);
+//                 else
+//                     v_rel = vt + mu * vn * vt.normalized() / vt.norm();
+//                 particle->velocity = v_rel;
+//             }
+
+            // Ensure particles do not end up below the floor
+            particle->position.z() = floorHeight;
+        }
+    }
+}
+
+
+void Snow::update_particle_positions() {
+    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++) {
         Particle* particle = m_particles[particle_index];
         // TODO: at what point do we set velocity_n to be velocity_n+1
         particle->position = particle->position + (particle->velocity * m_timestep);
     }
 }
 
-void Snow::update(){
+void Snow::update() {
     // STEP 1: Rasterize particle data to the grid
     rasterize_grid();
 
     // STEP 2: Compute particle volumes and densities
-    if (m_first){
+    if (m_first) {
         // first timestep only
         compute_cell_densities();
         compute_particle_volumes();
         m_first = false;
     }
 
-    // // STEP 3: Compute grid forces
+    // STEP 3: Compute grid forces
     compute_grid_forces();
 
-    // // STEP 4: Update velocities on grid
+    // STEP 4: Update velocities on grid
     update_grid_velocity();
 
-    // // TODO
-    // // STEP 5: Grid based body collisions
+    // STEP 5: Grid based body collisions
+    compute_grid_based_collisions();
 
-    // // TODO 
-    // // STEP 6: Solve the linear system
-    // // for now, we let v_i^n+1 = v_i^*
+    // TODO:
+    // STEP 6: Solve the linear system
+    // for now, we let v_i^n+1 = v_i^*
 
-    // // TODO
-    // // STEP 7: Update deformation gradient
+    // STEP 7: Update deformation gradient
     update_deformation_gradient();
 
-    // // STEP 8: Update particle velocities
+    // STEP 8: Update particle velocities
     update_particle_velocities();
 
-    // // TODO
-    // // STEP 9: Particle-based body collisions
+    // STEP 9: Particle-based body collisions
+    compute_particle_based_collisions();
 
-    // // STEP 10: Update particle positions
+    // STEP 10: Update particle positions
     update_particle_positions();
 }

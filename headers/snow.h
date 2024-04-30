@@ -44,8 +44,10 @@ class Snow {
         void compute_particle_volumes();
         void compute_grid_forces();
         void update_grid_velocity();
+        void compute_grid_based_collisions();
         void update_deformation_gradient();
         void update_particle_velocities();
+        void compute_particle_based_collisions();
         void update_particle_positions();
         void update();
 
@@ -57,6 +59,8 @@ class Snow {
         static void add_particles_initial(nlohmann::json &j, vector<Particle*> particles);
         static void add_particle_keyframe(nlohmann::json &j, vector<Particle*> particles, int frame);
         static void write_json_to_file(nlohmann::json &j);
+
+        const static int m_num_frames = 30;
 
     private:
         vector<Particle*> m_particles;

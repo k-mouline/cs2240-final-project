@@ -6,7 +6,7 @@ CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen
 BUILD_DIR = build
 
 # Target executable name
-TARGET = myprogram
+TARGET = letitsnow
 
 # Source files
 SRC = $(wildcard src/*.cc)
