@@ -15,7 +15,7 @@ int main() {
   Snow::add_particles_initial(j, s->get_particles());
 
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < Snow::m_num_frames; i++) {
     s->update();
     Snow::add_particle_keyframe(j, s->get_particles(), i);
     std::cout << "Frame " << i << " added." << std::endl;
