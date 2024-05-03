@@ -53,7 +53,6 @@ class Snow {
         void compute_particle_based_collisions();
         void update_particle_positions();
         void update();
-        void compute_particle_based_collisions();
 
         // GETTER FUNCTIONS
         vector<Particle*> get_particles() { return m_particles; };
