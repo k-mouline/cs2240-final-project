@@ -29,6 +29,7 @@ class Snow {
             Vector3f velocity_new;
             float density;
             Vector3f force;
+            Matrix3f deformation_gradient;
         };
         Snow();
         ~Snow();
@@ -46,6 +47,7 @@ class Snow {
         void compute_grid_forces();
         void update_grid_velocity();
         void compute_grid_based_collisions();
+        void solve_linear_system();
         void update_deformation_gradient();
         void update_particle_velocities();
         void compute_particle_based_collisions();
