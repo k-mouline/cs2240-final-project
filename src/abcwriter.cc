@@ -1,6 +1,6 @@
-#include <alembic/lib/Alembic/AbcGeom/All.h>
-#include <alembic/lib/Alembic/AbcCoreOgawa/All.h>
-#include <alembic/lib/Alembic/AbcCoreHDF5/All.h>
+#include <Alembic/AbcGeom/All.h>
+#include <Alembic/AbcCoreOgawa/All.h>
+#include <Alembic/AbcCoreHDF5/All.h>
 #include <iostream>
 #include <vector>
 #include <map>

@@ -1,6 +1,10 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen
+CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen -Ibuild_alembic/install/include
+
+# Linker settings
+LDFLAGS = -Lbuild_alembic/install/lib
+LDLIBS = -lAlembic
 
 # Build directory
 BUILD_DIR = build
@@ -19,7 +23,7 @@ all: $(TARGET)
 
 # Linking the target executable
 $(TARGET): $(OBJ)
-	$(CXX) $(OBJ) -o $@
+	$(CXX) $(LDFLAGS) $(OBJ) -o $@ $(LDLIBS)
 
 # Compiling every source file
 $(BUILD_DIR)/%.o: src/%.cc

@@ -1,0 +1,38 @@
+# CMake generated Testfile for 
+# Source directory: /Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests
+# Build directory: /Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/build_alembic/lib/Alembic/Abc/Tests
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+add_test(Abc_TEST1 "Abc_Test1")
+set_tests_properties(Abc_TEST1 PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;44;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Objects_and_Properties_TEST2 "Abc_ObjectsAndProperties_Test2")
+set_tests_properties(Abc_Objects_and_Properties_TEST2 PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;45;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Compile_TEST "Abc_CompileTests")
+set_tests_properties(Abc_Compile_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;49;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Object_TEST "Abc_ObjectTests")
+set_tests_properties(Abc_Object_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;53;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Property_TEST "Abc_PropertyTests")
+set_tests_properties(Abc_Property_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;57;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Uniform_Property_TEST "Abc_UniformPropertyTest")
+set_tests_properties(Abc_Uniform_Property_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;61;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Identity_Property_TEST "Abc_IdentityPropertyTest")
+set_tests_properties(Abc_Identity_Property_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;65;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Array_Property_TEST "Abc_ArrayPropertyTest")
+set_tests_properties(Abc_Array_Property_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;69;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Instance_TEST "Abc_InstanceTest")
+set_tests_properties(Abc_Instance_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;73;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Archive_TEST "Abc_ArchiveTest")
+set_tests_properties(Abc_Archive_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;77;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Cyclic_Property_TEST "Abc_CyclicPropertyTest")
+set_tests_properties(Abc_Cyclic_Property_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;81;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_Parenting_TEST "Abc_ParentingTest")
+set_tests_properties(Abc_Parenting_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;85;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_OctessenceBug17_TEST "Abc_OctessenceBug17")
+set_tests_properties(Abc_OctessenceBug17_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;89;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_OctessenceBug16_TEST "Abc_OctessenceBug16")
+set_tests_properties(Abc_OctessenceBug16_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;93;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_CacheControl_TEST "Abc_CacheControlTest")
+set_tests_properties(Abc_CacheControl_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;97;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
+add_test(Abc_RedundantDataPaths_TEST "Abc_RedundantDataPathsTest")
+set_tests_properties(Abc_RedundantDataPaths_TEST PROPERTIES  _BACKTRACE_TRIPLES "/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;101;ADD_TEST;/Users/brandondiaz/Downloads/CS/cs2240/cs2240-final-project/alembic/lib/Alembic/Abc/Tests/CMakeLists.txt;0;")
