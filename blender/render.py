@@ -41,7 +41,7 @@ def create_particle(particle_data):
     obj.keyframe_insert(data_path="location", frame=anim['frame'])
 
 def create_particle(particle_data):
-  bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=particle_data['size'])
+  bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=4, radius=particle_data['size'])
   sphere = bpy.context.object
   sphere.name = particle_data['name']
   

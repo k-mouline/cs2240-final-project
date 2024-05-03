@@ -57,7 +57,7 @@ void Snow::add_particles_initial(nlohmann::json &j, vector<Particle*> particles)
       {"position", {p->position.x(), p->position.y(), p->position.z()}},
       {"scale", {1, 1, 1}},
       {"color", {1, 1, 1, 1}}, // RGBA
-      {"size", 0.05},
+      {"size", 0.01},
       {"animation", json::array()}
     };
     particles_map[p->id] = particle;
