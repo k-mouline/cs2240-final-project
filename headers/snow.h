@@ -66,18 +66,24 @@ class Snow {
         static void write_json_to_file(nlohmann::json &j);
 
         // ABC FUNCTIONS
-        void write_scene_setup_to_abc(Alembic::AbcGeom::OObject& parent);
-        void write_camera_to_abc(Alembic::AbcGeom::OObject& parent);
-        void write_ground_to_abc(Alembic::AbcGeom::OObject& parent);
-        void write_particles_to_abc(Alembic::AbcGeom::OObject& parent, std::vector<Particle*>& particles);
-        void write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles);
+        static void write_scene_setup_to_abc(Alembic::AbcGeom::OObject& parent);
+        static void write_camera_to_abc(Alembic::AbcGeom::OObject& parent);
+        static void write_ground_to_abc(Alembic::AbcGeom::OObject& parent);
+        static void write_particles_to_abc(Alembic::AbcGeom::OObject& parent, std::vector<Particle*>& particles);
+        static void write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles);
 
-        const static int m_num_frames = 80;
+        static void initialize_alembic(const std::string& filename);
+        static void write_initial_scene_setup();
+        static void add_initial_particles(const std::vector<Particle*>& particles);
+        static void add_particle_keyframes(const std::vector<Particle*>& particles, int frame);
+        static void finalize_alembic();
+
+        const static int m_num_frames = 20;
 
     private:
         vector<Particle*> m_particles;
         vector<GridCell*> m_grid;
-        int m_num_particles = 1000; // must be perfect square
+        int m_num_particles = 400; // must be perfect square
         int m_grid_size = 5;
         float m_grid_spacing = 2.0 / m_grid_size;
         Vector3f m_gravity = Vector3f(0, 0, -9.8);
@@ -92,4 +98,7 @@ class Snow {
         float m_compression = 2.5e-2;
         float m_stretch = 7.5e-3;
         float m_restitution = 0.15;
+        static Alembic::Abc::OArchive m_archive;
+        static Alembic::AbcGeom::OObject m_root;
+        static std::vector<Alembic::AbcGeom::OXform> m_particleXforms;
 };
