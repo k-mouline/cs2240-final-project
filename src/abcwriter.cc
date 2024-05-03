@@ -5,33 +5,10 @@
 #include <vector>
 #include <map>
 #include <string>
-#include "headers/snow.h"
-#include "Particle.h"
+#include "snow.h"
 
 using namespace Alembic::Abc;
 using namespace Alembic::AbcGeom;
-
-void Snow::write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles) {
-    // Create an Alembic archive for writing
-    OArchive archive(Alembic::AbcCoreOgawa::WriteArchive(), filename);
-
-    OObject topObject(archive, kTop);
-
-    // Write scene setup data
-    write_scene_setup_to_abc(topObject);
-
-    // Write camera data
-    write_camera_to_abc(topObject);
-
-    // Write ground data
-    write_ground_to_abc(topObject);
-
-    // Write particles data
-    write_particles_to_abc(topObject, particles);
-
-    // Save the archive
-    archive.getCore().getArchive()->save();
-}
 
 void Snow::write_scene_setup_to_abc(OObject& parent) {
     OCompoundProperty sceneProps = parent.getProperties();
@@ -76,4 +53,26 @@ void Snow::write_particles_to_abc(OObject& parent, std::vector<Particle*>& parti
             keyframeProps.createScalarProperty<std::vector<float>>("position").set({p->position.x(), p->position.y(), p->position.z()});
         }
     }
+}
+
+void Snow::write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles) {
+    // Create an Alembic archive for writing
+    OArchive archive(Alembic::AbcCoreOgawa::WriteArchive(), filename);
+
+    OObject topObject(archive, kTop);
+
+    // Write scene setup data
+    write_scene_setup_to_abc(topObject);
+
+    // Write camera data
+    write_camera_to_abc(topObject);
+
+    // Write ground data
+    write_ground_to_abc(topObject);
+
+    // Write particles data
+    write_particles_to_abc(topObject, particles);
+
+    // Save the archive
+    archive.getCore().getArchive()->save();
 }

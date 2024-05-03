@@ -1,16 +1,21 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen -Ibuild_alembic/install/include
+CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen -Ialembic/lib -Iexternal/Imath/src/Imath -Iexternal/Imath/build/config -fopenmp -MMD -MP
 
 # Linker settings
-LDFLAGS = -Lbuild_alembic/install/lib
-LDLIBS = -lAlembic
+LDFLAGS = -Lbuild_alembic/install/lib -Lexternal/Imath/lib
+LDLIBS = -lAlembic -lImath
 
 # Build directory
 BUILD_DIR = build
 
 # Target executable name
 TARGET = letitsnow
+
+# Set number of threads
+OMP_NUM_THREADS = 8
+LDFLAGS="-L/opt/homebrew/opt/llvm/lib" -fopenmp
+CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 
 # Source files
 SRC = $(wildcard src/*.cc)
