@@ -137,9 +137,23 @@ void Snow::compute_particle_volumes() {
     for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
         Particle* particle = m_particles[particle_index];
         float density = 0;
-        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
-            GridCell* cell = m_grid[grid_index];
-            density += cell->density * particle_weight(cell->grid_index, particle->position);
+        // for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+        //     GridCell* cell = m_grid[grid_index];
+        //     density += cell->density * particle_weight(cell->grid_index, particle->position);
+        // }
+        for (int x_offset = -1; x_offset < 2; x_offset++){
+            for (int y_offset = -1; y_offset < 2; y_offset++){
+                for (int z_offset = -1; z_offset < 2; z_offset++){
+                    if (x_offset == 0 && y_offset == 0 && z_offset == 0){
+                        continue;
+                    }
+                    Vector3f grid_index = get_grid_coords(particle->position) + Vector3f(x_offset, y_offset, z_offset);
+                    if (grid_index.x() >= 0 && grid_index.x() < m_grid_size && grid_index.y() >= 0 && grid_index.y() < m_grid_size && grid_index.z() >= 0 && grid_index.z() < m_grid_size){
+                        GridCell* cell = m_grid[get_grid_index(grid_index)];
+                        density += cell->density * particle_weight(cell->grid_index, particle->position);
+                    }
+                }
+            }
         }
         particle->density = density;
         particle->volume = particle->mass / particle->density;
@@ -198,7 +212,7 @@ void Snow::compute_grid_based_collisions() {
             Vector3f v_rel = cell->velocity;
             float vn = v_rel.z();
 
-            if (vn < 0) { // THIS VERSION IS FROM OUR FRIEND
+            if (vn < 0) {
                 v_rel.z() = -vn * m_restitution;
                 Vector3f vt(v_rel.x(), v_rel.y(), 0);
                 if (vt.norm() > 0) {
@@ -207,14 +221,6 @@ void Snow::compute_grid_based_collisions() {
                 }
                 cell->velocity = v_rel;
             }
-//             if (vn < 0) { // THIS IS THE VERSION I WROTE THAT DIDNT REALLY WORK
-//                 Vector3f vt = v_rel - vn * up;
-//                 if (vt.norm() <= -mu * vn)
-//                     v_rel = Vector3f(0, 0, 0);
-//                 else
-//                     v_rel = vt + mu * vn * vt.normalized() / vt.norm();
-//                 cell->velocity = v_rel;
-//             }
         }
     }
 }
@@ -253,10 +259,25 @@ void Snow::update_particle_velocities() {
         Particle* particle = m_particles[particle_index];
         Vector3f velocity_pic = Vector3f::Zero();
         Vector3f velocity_flip = particle->velocity;
-        for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
-            GridCell* cell = m_grid[grid_index];
-            velocity_pic += cell->velocity * particle_weight(cell->grid_index, particle->position);
-            velocity_flip += (cell->velocity_star - cell->velocity) * particle_weight(cell->grid_index, particle->position);
+        // for (int grid_index = 0; grid_index < m_grid.size(); grid_index++){
+        //     GridCell* cell = m_grid[grid_index];
+        //     velocity_pic += cell->velocity * particle_weight(cell->grid_index, particle->position);
+        //     velocity_flip += (cell->velocity_star - cell->velocity) * particle_weight(cell->grid_index, particle->position);
+        // }
+        for (int x_offset = -1; x_offset < 2; x_offset++){
+            for (int y_offset = -1; y_offset < 2; y_offset++){
+                for (int z_offset = -1; z_offset < 2; z_offset++){
+                    if (x_offset == 0 && y_offset == 0 && z_offset == 0){
+                        continue;
+                    }
+                    Vector3f grid_index = get_grid_coords(particle->position) + Vector3f(x_offset, y_offset, z_offset);
+                    if (grid_index.x() >= 0 && grid_index.x() < m_grid_size && grid_index.y() >= 0 && grid_index.y() < m_grid_size && grid_index.z() >= 0 && grid_index.z() < m_grid_size){
+                        GridCell* cell = m_grid[get_grid_index(grid_index)];
+                        velocity_pic += cell->velocity * particle_weight(cell->grid_index, particle->position);
+                        velocity_flip += (cell->velocity_star - cell->velocity) * particle_weight(cell->grid_index, particle->position);
+                    }
+                }
+            }
         }
         particle->velocity = ((1 - m_alpha) * velocity_pic) + (m_alpha * velocity_flip);    
     }
@@ -314,7 +335,7 @@ void Snow::compute_particle_based_collisions() {
             Vector3f v_rel = particle->velocity;
             float vn = v_rel.z();
 
-            if (vn < 0) { // THIS VERSION IS FROM OUR FRIEND
+            if (vn < 0) {
                 v_rel.z() = -vn * m_restitution;
 
                 Vector3f vt(v_rel.x(), v_rel.y(), 0);
@@ -324,16 +345,7 @@ void Snow::compute_particle_based_collisions() {
                 }
                 particle->velocity = v_rel;
             }
-//             if (vn < 0) { THIS IS WHAT I WROTE THAT DIDN'T RLY WORK
-//                 Vector3f vt = v_rel - vn * up;
-//                 if (vt.norm() <= -mu * vn)
-//                     v_rel = Vector3f(0, 0, 0);
-//                 else
-//                     v_rel = vt + mu * vn * vt.normalized() / vt.norm();
-//                 particle->velocity = v_rel;
-//             }
 
-            // Ensure particles do not end up below the floor
             particle->position.z() = floor_height;
         }
     }
