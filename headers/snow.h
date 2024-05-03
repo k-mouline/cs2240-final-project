@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Alembic/AbcGeom/All.h>
+#include <Alembic/AbcCoreOgawa/All.h>
+#include <Alembic/AbcCoreHDF5/All.h>
 #include "Eigen"
 #include "json.hpp"
 
@@ -61,6 +64,13 @@ class Snow {
         static void add_particles_initial(nlohmann::json &j, vector<Particle*> particles);
         static void add_particle_keyframe(nlohmann::json &j, vector<Particle*> particles, int frame);
         static void write_json_to_file(nlohmann::json &j);
+
+        // ABC FUNCTIONS
+        void write_scene_setup_to_abc(Alembic::AbcGeom::OObject& parent);
+        void write_camera_to_abc(Alembic::AbcGeom::OObject& parent);
+        void write_ground_to_abc(Alembic::AbcGeom::OObject& parent);
+        void write_particles_to_abc(Alembic::AbcGeom::OObject& parent, std::vector<Particle*>& particles);
+        void write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles);
 
         const static int m_num_frames = 80;
 

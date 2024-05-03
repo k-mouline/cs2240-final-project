@@ -1,9 +1,7 @@
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
-#include <Alembic/AbcCoreHDF5/All.h>
 #include <iostream>
 #include <vector>
-#include <map>
 #include <string>
 #include "snow.h"
 
@@ -12,67 +10,53 @@ using namespace Alembic::AbcGeom;
 
 void Snow::write_scene_setup_to_abc(OObject& parent) {
     OCompoundProperty sceneProps = parent.getProperties();
-    sceneProps.createScalarProperty<std::vector<int32_t>>("resolution").set(std::vector<int32_t>{1920, 1080});
-    sceneProps.createScalarProperty<std::vector<int32_t>>("frame_range").set(std::vector<int32_t>{1, 200});
-    sceneProps.createScalarProperty<int32_t>("frame_rate").set(24);.
+    // Use the appropriate property classes directly.
+    OInt32ArrayProperty resolutionProp(sceneProps, "resolution", kSparse);
+    resolutionProp.set(Int32ArraySample({1920, 1080}));
+    OInt32ArrayProperty frameRangeProp(sceneProps, "frame_range", kSparse);
+    frameRangeProp.set(Int32ArraySample({1, 200}));
+    OInt32Property frameRateProp(sceneProps, "frame_rate", kSparse);
+    frameRateProp.set(24);
 }
 
 void Snow::write_camera_to_abc(OObject& parent) {
     OCompoundProperty cameraProps = parent.getProperties();
-    cameraProps.createScalarProperty<std::vector<float>>("position").set(std::vector<float>{10.0f, 10.0f, 10.0f});
-    cameraProps.createScalarProperty<std::vector<float>>("rotation").set(std::vector<float>{0.0f, 0.0f, 0.0f});
-    cameraProps.createScalarProperty<float>("fov").set(60.0f);
+    OFloatArrayProperty positionProp(cameraProps, "position", kSparse);
+    positionProp.set(FloatArraySample({10.0f, 10.0f, 10.0f}));
+    OFloatArrayProperty rotationProp(cameraProps, "rotation", kSparse);
+    rotationProp.set(FloatArraySample({0.0f, 0.0f, 0.0f}));
+    OFloatProperty fovProp(cameraProps, "fov", kSparse);
+    fovProp.set(60.0f);
 }
 
 void Snow::write_ground_to_abc(OObject& parent) {
     OCompoundProperty groundProps = parent.getProperties();
-    groundProps.createScalarProperty<std::string>("type").set("plane");
-    groundProps.createScalarProperty<std::vector<float>>("position").set(std::vector<float>{0.0f, 0.0f, -5.0f});
-    groundProps.createScalarProperty<std::vector<float>>("scale").set(std::vector<float>{50.0f, 1.0f, 50.0f});
-    groundProps.createScalarProperty<std::vector<float>>("material.color").set(std::vector<float>{1.0f, 1.0f, 1.0f, 1.0f});
-    groundProps.createScalarProperty<float>("material.roughness").set(0.9f);
-    groundProps.createScalarProperty<float>("material.metallic").set(0.0f);
+    OStringProperty typeProp(groundProps, "type", kSparse);
+    typeProp.set("plane");
+    OFloatArrayProperty positionProp(groundProps, "position", kSparse);
+    positionProp.set(FloatArraySample({0.0f, 0.0f, -5.0f}));
+    OFloatArrayProperty scaleProp(groundProps, "scale", kSparse);
+    scaleProp.set(FloatArraySample({50.0f, 1.0f, 50.0f}));
 }
 
 void Snow::write_particles_to_abc(OObject& parent, std::vector<Particle*>& particles) {
-    OCompoundProperty particlesArray = parent.getProperties().createCompoundProperty("particles");
+    OCompoundProperty particlesArray(parent.getProperties(), "particles");
     for (Particle* p : particles) {
-        OCompoundProperty particleProps = particlesArray.getSchema().createCompoundProperty();
-        particleProps.createScalarProperty<int32_t>("id").set(p->id);
-        particleProps.createScalarProperty<std::string>("name").set("particle " + std::to_string(p->id));
-        particleProps.createScalarProperty<std::string>("type").set("point");
-        particleProps.createScalarProperty<std::vector<float>>("position").set({p->position.x(), p->position.y(), p->position.z()});
-        particleProps.createScalarProperty<std::vector<float>>("scale").set({1.0f, 1.0f, 1.0f});
-        particleProps.createScalarProperty<std::vector<float>>("color").set({1.0f, 1.0f, 1.0f, 1.0f});
-        particleProps.createScalarProperty<float>("size").set(0.01f);
-
-        OCompoundProperty animationProps = particleProps.createCompoundProperty("animation");
-        for (int frame = 1; frame <= snow::m_num_frames; ++frame) { 
-            OCompoundProperty keyframeProps = animationProps.getSchema().createCompoundProperty();
-            keyframeProps.createScalarProperty<int32_t>("frame").set(frame);
-            keyframeProps.createScalarProperty<std::vector<float>>("position").set({p->position.x(), p->position.y(), p->position.z()});
-        }
+        OCompoundProperty particleProps(particlesArray, std::to_string(p->id));
+        OInt32Property idProp(particleProps, "id", kSparse);
+        idProp.set(p->id);
+        OStringProperty typeProp(particleProps, "type", kSparse);
+        typeProp.set("point");
+        OFloatArrayProperty positionProp(particleProps, "position", kSparse);
+        positionProp.set(FloatArraySample({p->position.x(), p->position.y(), p->position.z()}));
     }
 }
 
 void Snow::write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles) {
-    // Create an Alembic archive for writing
     OArchive archive(Alembic::AbcCoreOgawa::WriteArchive(), filename);
-
     OObject topObject(archive, kTop);
-
-    // Write scene setup data
     write_scene_setup_to_abc(topObject);
-
-    // Write camera data
     write_camera_to_abc(topObject);
-
-    // Write ground data
     write_ground_to_abc(topObject);
-
-    // Write particles data
     write_particles_to_abc(topObject, particles);
-
-    // Save the archive
-    archive.getCore().getArchive()->save();
 }
