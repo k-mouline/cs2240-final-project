@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Alembic/AbcGeom/All.h>
-#include <Alembic/AbcCoreOgawa/All.h>
-#include <Alembic/AbcCoreHDF5/All.h>
+// #include <Alembic/AbcGeom/All.h>
+// #include <Alembic/AbcCoreOgawa/All.h>
+// #include <Alembic/AbcCoreHDF5/All.h>
 #include "Eigen"
 #include "json.hpp"
 
@@ -66,17 +66,17 @@ class Snow {
         static void write_json_to_file(nlohmann::json &j);
 
         // ABC FUNCTIONS
-        static void write_scene_setup_to_abc(Alembic::AbcGeom::OObject& parent);
-        static void write_camera_to_abc(Alembic::AbcGeom::OObject& parent);
-        static void write_ground_to_abc(Alembic::AbcGeom::OObject& parent);
-        static void write_particles_to_abc(Alembic::AbcGeom::OObject& parent, std::vector<Particle*>& particles);
-        static void write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles);
+        // static void write_scene_setup_to_abc(Alembic::AbcGeom::OObject& parent);
+        // static void write_camera_to_abc(Alembic::AbcGeom::OObject& parent);
+        // static void write_ground_to_abc(Alembic::AbcGeom::OObject& parent);
+        // static void write_particles_to_abc(Alembic::AbcGeom::OObject& parent, std::vector<Particle*>& particles);
+        // static void write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles);
 
-        static void initialize_alembic(const std::string& filename);
-        static void write_initial_scene_setup();
-        static void add_initial_particles(const std::vector<Particle*>& particles);
-        static void add_particle_keyframes(const std::vector<Particle*>& particles, int frame);
-        static void finalize_alembic();
+        // static void initialize_alembic(const std::string& filename);
+        // static void write_initial_scene_setup();
+        // static void add_initial_particles(const std::vector<Particle*>& particles);
+        // static void add_particle_keyframes(const std::vector<Particle*>& particles, int frame);
+        // static void finalize_alembic();
 
         const static int m_num_frames = 20;
 
@@ -98,7 +98,7 @@ class Snow {
         float m_compression = 2.5e-2;
         float m_stretch = 7.5e-3;
         float m_restitution = 0.15;
-        static Alembic::Abc::OArchive m_archive;
-        static Alembic::AbcGeom::OObject m_root;
-        static std::vector<Alembic::AbcGeom::OXform> m_particleXforms;
+        // static Alembic::Abc::OArchive m_archive;
+        // static Alembic::AbcGeom::OObject m_root;
+        // static std::vector<Alembic::AbcGeom::OXform> m_particleXforms;
 };
