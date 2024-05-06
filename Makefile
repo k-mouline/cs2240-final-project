@@ -1,6 +1,6 @@
 # Compiler settings
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen
+CXX = g++-11
+CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen -fopenmp -MMD -MP
 
 # Build directory
 BUILD_DIR = build
@@ -14,12 +14,17 @@ SRC = $(wildcard src/*.cc)
 # Object files
 OBJ = $(SRC:src/%.cc=$(BUILD_DIR)/%.o)
 
+# stuff for pragma
+OMP_NUM_THREADS = 8
+LDFLAGS="-L/opt/homebrew/opt/llvm/lib" -fopenmp
+CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+
 # Default target
 all: $(TARGET)
 
 # Linking the target executable
 $(TARGET): $(OBJ)
-	$(CXX) $(OBJ) -o $@
+	$(CXX) $(LDFLAGS) $(OBJ) -o $@
 
 # Compiling every source file
 $(BUILD_DIR)/%.o: src/%.cc

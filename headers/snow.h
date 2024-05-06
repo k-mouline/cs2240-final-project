@@ -53,7 +53,6 @@ class Snow {
         void compute_particle_based_collisions();
         void update_particle_positions();
         void update();
-        void compute_particle_based_collisions();
 
         // GETTER FUNCTIONS
         vector<Particle*> get_particles() { return m_particles; };
@@ -69,8 +68,8 @@ class Snow {
     private:
         vector<Particle*> m_particles;
         vector<GridCell*> m_grid;
-        int m_num_particles = 1000; // must be perfect square
-        int m_grid_size = 5;
+        int m_num_particles = 1000;
+        int m_grid_size = 25;
         float m_grid_spacing = 2.0 / m_grid_size;
         Vector3f m_gravity = Vector3f(0, 0, -9.8);
         bool m_first = true;
@@ -83,5 +82,5 @@ class Snow {
         float m_mu_0 = m_youngs_modulus / (2 * (1 + m_poissons_ratio));
         float m_compression = 2.5e-2;
         float m_stretch = 7.5e-3;
-        float m_restitution = 0.15;
+        float m_restitution = 0.05;
 };

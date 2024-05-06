@@ -3,6 +3,16 @@
 #include <iostream>
 #include <fstream>
 
+#pragma omp declare reduction( \
+    VectorSum: Eigen::Vector3f: \
+    omp_out += omp_in) \
+    initializer(omp_priv = Eigen::Vector3f::Zero())
+
+#pragma omp declare reduction( \
+    MatrixSum: Eigen::Matrix3f: \
+    omp_out += omp_in) \
+    initializer(omp_priv = Eigen::Matrix3f::Zero())
+
 Snow::Snow() {
     m_particles = std::vector<Particle*>();
     m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size);
@@ -14,8 +24,8 @@ Snow::Snow() {
         // p->position = Vector3f(((i % spacing) / (float)(spacing)), ((i / spacing) / (float)(spacing)), 1);
         // randomly place the particle in a radius 0.25 sphere about the origin
         float radius = 0.25;
+        float theta =  M_PI * (rand() / (float)RAND_MAX);
         float phi = 2 * M_PI * (rand() / (float)RAND_MAX);
-        float theta = M_PI * (rand() / (float)RAND_MAX);
         float r = radius * pow((rand() / (float)RAND_MAX), 1.f / 3.f);
         float x = r * sin(theta) * cos(phi);
         float y = r * sin(theta) * sin(phi);
@@ -79,9 +89,9 @@ float Snow::calculate_n(float x) {
 
 float Snow::calculate_n_prime(float x) {
     if (0 <= abs(x) && abs(x) < 1)
-        return (1.5 * pow(abs(x), 2)) - (2 * abs(x));
+        return (1.5 * abs(x) * x) - (2.f * x);
     else if (1 <= abs(x) && abs(x) < 2)
-        return ((-0.5) * pow(abs(x), 2)) + (2 * abs(x)) - 2;
+        return ((-0.5) * abs(x) * x) + (2.f * x) - (2.f * abs(x) / x);
     else
         return 0;
 }
@@ -100,14 +110,16 @@ Vector3f Snow::particle_weight_gradient(Vector3f grid_index, Vector3f evaluation
 
 Matrix3f Snow::particle_velocity_gradient(Vector3f evaluation_position) {
     Matrix3f gradient = Matrix3f::Zero();
-    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++)
-        gradient += m_grid[grid_index]->velocity_new * (particle_weight_gradient(m_grid[grid_index]->grid_index, evaluation_position)).transpose();
+    for (int grid_index = 0; grid_index < (int)m_grid.size(); grid_index++){
+        gradient += m_grid[grid_index]->velocity_star * (particle_weight_gradient(m_grid[grid_index]->grid_index, evaluation_position)).transpose();
+    }
     return gradient;
 }
 
 Matrix3f Snow::psi(Matrix3f Fe, Matrix3f Fp) {
     float Je = Fe.determinant();
     float Jp = Fp.determinant();
+    float J = Je * Jp;
     float exponential = m_hardening * (1 - Jp);
     float mu_fp = m_mu_0 * exp(exponential);
     float lambda_fp = m_lambda_0 * exp(exponential);
@@ -115,7 +127,7 @@ Matrix3f Snow::psi(Matrix3f Fe, Matrix3f Fp) {
     Matrix3f sigma = svd.singularValues().asDiagonal();
     Matrix3f Re = svd.matrixV() * sigma * svd.matrixV().transpose();
 
-    return (2.f * mu_fp * (Fe - Re) * (Fe.transpose())) + ((lambda_fp * (Je - 1) * Je) * Matrix3f::Identity());
+    return (((2.f * mu_fp) / J) * (Fe - Re) * (Fe.transpose())) + (((lambda_fp / J) * (Je - 1) * Je) * Matrix3f::Identity());
 }
 
 /**
@@ -128,16 +140,19 @@ Matrix3f Snow::psi(Matrix3f Fe, Matrix3f Fp) {
  */
 void Snow::rasterize_grid() {
     // first step is to rasterize particles into grid cells
-    for (int grid_cell = 0; grid_cell < m_grid.size(); grid_cell++) {
+    #pragma omp parallel for
+    for (int grid_cell = 0; grid_cell < (int)m_grid.size(); grid_cell++) {
         // for each grid cell, we need to calculate the mass and velocity
         float mass = 0;
         Vector3f velocity = Vector3f::Zero();
         // sum across the particles
+        #pragma omp parallel for reduction(+:mass)
         for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
             Particle* particle = m_particles[particle_index];
             mass += particle->mass + particle_weight(m_grid[grid_cell]->grid_index, particle->position);
         }
         // need to calculate velocity after since we need the normalization factor from the mass
+        #pragma omp parallel for reduction(VectorSum:velocity)
         for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
             Particle* particle = m_particles[particle_index];
             velocity += particle->mass * particle->velocity * particle_weight(m_grid[grid_cell]->grid_index, particle->position) / mass;
@@ -155,7 +170,8 @@ void Snow::rasterize_grid() {
  * to the power of 3.
  */
 void Snow::compute_cell_densities() {
-    for (int index = 0; index < m_grid.size(); index++) {
+    #pragma omp parallel for
+    for (int index = 0; index < (int)m_grid.size(); index++) {
         GridCell* cell = m_grid[index];
         cell->density = cell->mass / pow(m_grid_spacing, 3);
     }
@@ -169,13 +185,15 @@ void Snow::compute_cell_densities() {
  * densities of the grid cells that the particle is influenced by.
  */
 void Snow::compute_particle_volumes() {
+    #pragma omp parallel for
     for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
         Particle* particle = m_particles[particle_index];
         float density = 0;
-        // for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
+        // for (int grid_index = 0; grid_index < (int)m_grid.size(); grid_index++) {
         //     GridCell* cell = m_grid[grid_index];
         //     density += cell->density * particle_weight(cell->grid_index, particle->position);
         // }
+        #pragma omp parallel for reduction(+:density)
         for (int x_offset = -1; x_offset < 2; x_offset++) {
             for (int y_offset = -1; y_offset < 2; y_offset++) {
                 for (int z_offset = -1; z_offset < 2; z_offset++) {
@@ -204,12 +222,14 @@ void Snow::compute_particle_volumes() {
  * of the particle and the gradient of the weight of the particle.
  */
 void Snow::compute_grid_forces() {
-    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
+    #pragma omp parallel for
+    for (int grid_index = 0; grid_index < (int)m_grid.size(); grid_index++) {
         GridCell* cell = m_grid[grid_index];
         Vector3f force = Vector3f::Zero();
         Matrix3f totalDeformationGradient = Matrix3f::Zero();
         float totalWeight = 0;
 
+        #pragma omp parallel for reduction(VectorSum:force) reduction(MatrixSum:totalDeformationGradient) reduction(+:totalWeight)
         for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
             Particle* particle = m_particles[particle_index];
             float weight = particle_weight(cell->grid_index, particle->position);
@@ -239,7 +259,8 @@ void Snow::compute_grid_forces() {
  * on the grid cell multiplied by the inverse mass of the grid cell and the timestep.
  */
 void Snow::update_grid_velocity() {
-    for (int grid_index = 0; grid_index < m_grid.size(); grid_index++) {
+    #pragma omp parallel for
+    for (int grid_index = 0; grid_index < (int)m_grid.size(); grid_index++) {
         GridCell* cell = m_grid[grid_index];
         if (cell->mass != 0) {
             float inverse_mass = 1.f / cell->mass;
@@ -260,6 +281,7 @@ void Snow::compute_grid_based_collisions() {
     float floor_height = -0.75;
     float mu = 0.3f;
 
+    #pragma omp parallel for
     for (GridCell* cell : m_grid) {
         Vector3f grid_index = cell->grid_index;
         Vector3f grid_pos = Vector3f(
@@ -275,11 +297,11 @@ void Snow::compute_grid_based_collisions() {
                 v_rel.z() = -vn * m_restitution;
                 Vector3f vt(v_rel.x(), v_rel.y(), 0);
                 if (vt.norm() > 0) {
-                    v_rel.x() -= mu * vn * vt.normalized().x();
-                    v_rel.y() -= mu * vn * vt.normalized().y();
+                    v_rel.x() -= vn * vt.normalized().x();
+                    v_rel.y() -= vn * vt.normalized().y();
                 }
-                cell->velocity = v_rel;
             }
+            cell->velocity = mu * v_rel;
         }
     }
 }
@@ -336,7 +358,8 @@ void Snow::solve_linear_system() {
  * gradient. The elastic part of the deformation gradient is clamped to be within the threshold.
  */
 void Snow::update_deformation_gradient() {
-    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++) {
+    #pragma omp parallel for
+    for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
         Particle* particle = m_particles[particle_index];
         // temporarily define the parts of the deformation gradient
         Matrix3f next_deformation_gradient_elastic = (Matrix3f::Identity() + (m_timestep * particle_velocity_gradient(particle->position))) * particle->deformation_gradient_elastic;
@@ -350,14 +373,18 @@ void Snow::update_deformation_gradient() {
         Matrix3f singular_values = Matrix3f::Zero();
         singular_values.diagonal() = svd.singularValues();
         Matrix3f S;
+        Matrix3f S_inverse;
         // clamping
         S << clamp(singular_values(0, 0), 1 - m_compression, 1 + m_stretch), 0, 0,
                    0, clamp(singular_values(1, 1), 1 - m_compression, 1 + m_stretch), 0,
                    0, 0, clamp(singular_values(2, 2), 1 - m_compression, 1 + m_stretch);
 
+        S_inverse << 1 / S(0, 0), 0, 0,
+                      0, 1 / S(1, 1), 0,
+                      0, 0, 1 / S(2, 2);
 
         next_deformation_gradient_elastic = (u_matrix * S) * v_matrix.transpose();
-        next_deformation_gradient_plastic = v_matrix * S.inverse() * u_matrix.transpose() * next_deformation_gradient;
+        next_deformation_gradient_plastic = v_matrix * S_inverse * u_matrix.transpose() * next_deformation_gradient;
 
         particle->deformation_gradient_elastic = next_deformation_gradient_elastic;
         particle->deformation_gradient_plastic = next_deformation_gradient_plastic;
@@ -373,11 +400,13 @@ void Snow::update_deformation_gradient() {
  * between the star and regular velocities of the grid cells that the particle is influenced by.
  */
 void Snow::update_particle_velocities() {
-    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++) {
+    #pragma omp parallel for
+    for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
         Particle* particle = m_particles[particle_index];
         Vector3f velocity_pic = Vector3f::Zero();
         Vector3f velocity_flip = particle->velocity;
 
+        #pragma omp parallel for reduction(VectorSum:velocity_pic) reduction(VectorSum:velocity_flip)
         for (int x_offset = -1; x_offset < 2; x_offset++) {
             for (int y_offset = -1; y_offset < 2; y_offset++) {
                 for (int z_offset = -1; z_offset < 2; z_offset++) {
@@ -388,7 +417,7 @@ void Snow::update_particle_velocities() {
                     if (grid_index.x() >= 0 && grid_index.x() < m_grid_size && grid_index.y() >= 0 && grid_index.y() < m_grid_size && grid_index.z() >= 0 && grid_index.z() < m_grid_size) {
                         GridCell* cell = m_grid[get_grid_index(grid_index)];
                         velocity_pic += cell->velocity * particle_weight(cell->grid_index, particle->position);
-                        velocity_flip += (cell->velocity_new - cell->velocity) * particle_weight(cell->grid_index, particle->position);
+                        velocity_flip += (cell->velocity_star - cell->velocity) * particle_weight(cell->grid_index, particle->position);
                     }
                 }
             }
@@ -408,6 +437,7 @@ void Snow::compute_particle_based_collisions() {
     float floor_height = -0.75;
     float mu = 0.3f;
 
+    #pragma omp parallel for
     for (Particle* particle : m_particles) {
         if (particle->position.z() <= floor_height) {
             Vector3f v_rel = particle->velocity;
@@ -418,11 +448,11 @@ void Snow::compute_particle_based_collisions() {
 
                 Vector3f vt(v_rel.x(), v_rel.y(), 0);
                 if (vt.norm() > 0) {
-                    v_rel.x() -= mu * vn * vt.normalized().x();
-                    v_rel.y() -= mu * vn * vt.normalized().y();
+                    v_rel.x() -= vn * vt.normalized().x();
+                    v_rel.y() -= vn * vt.normalized().y();
                 }
-                particle->velocity = v_rel;
             }
+            particle->velocity = mu * v_rel;
 
             particle->position.z() = floor_height;
         }
@@ -436,7 +466,8 @@ void Snow::compute_particle_based_collisions() {
  * multiplied by the timestep to the position of the particle. 
  */
 void Snow::update_particle_positions() {
-    for (int particle_index = 0; particle_index < m_particles.size(); particle_index++) {
+    #pragma omp parallel for
+    for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
         Particle* particle = m_particles[particle_index];
         particle->position = particle->position + (particle->velocity * m_timestep);
     }
@@ -463,7 +494,7 @@ void Snow::update() {
     compute_grid_based_collisions();
 
     // STEP 6: Solve the linear system
-    solve_linear_system();
+    // solve_linear_system();
 
     // STEP 7: Update deformation gradient
     update_deformation_gradient();
