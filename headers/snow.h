@@ -33,6 +33,13 @@ class Snow {
         };
         Snow();
         ~Snow();
+
+        // starting positions
+        Vector3f sphere(float radius);
+        Vector3f cube();
+        Vector3f heart();
+        Vector3f bunny();
+
         Vector3f get_grid_coords(Vector3f position);
         int get_grid_index(Vector3f grid_coords);
         void rasterize_grid();
