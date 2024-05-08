@@ -50,14 +50,9 @@ Snow::Snow() {
     for (int i = 0; i < m_num_particles; i++) {
         Particle* p = new Particle;
         p->id = i;
-        // int spacing = sqrt(m_num_particles);
-        // p->position = Vector3f(((i % spacing) / (float)(spacing)), ((i / spacing) / (float)(spacing)), 1);
-        // randomly place the particle in a radius 0.25 sphere about the origin
-
-        Vector3f position = sphere(0.25f);
-
-        p->position = position;
-        p->velocity = Vector3f::Zero();
+        p->position = sphere(0.25f);
+        // p->velocity = Vector3f::Zero();
+        p->velocity = Vector3f(-5, 0, 0);
         p->mass = 0.1f;
         p->deformation_gradient_elastic = Matrix3f::Identity();
         p->deformation_gradient_plastic = Matrix3f::Identity();
@@ -106,17 +101,17 @@ float Snow::particle_weight(Vector3f grid_index, Vector3f evaluation_position) {
 
 float Snow::calculate_n(float x) {
     if (0 <= abs(x) && abs(x) < 1)
-        return (0.5f * pow(abs(x), 3)) - pow(abs(x), 2) + (2.f / 3.f);
+        return (0.5f * pow(abs(x), 3.f)) - pow(abs(x), 2.f) + (2.f / 3.f);
     else if (1 <= abs(x) && abs(x) < 2)
-        return ((-1.f / 6.f) * pow(abs(x), 3)) + pow(abs(x), 2) - (2 * abs(x)) + (4.f / 3.f);
+        return ((-1.f / 6.f) * pow(abs(x), 3)) + pow(abs(x), 2.f) - (2.f * abs(x)) + (4.f / 3.f);
     else
         return 0;
 }
 
 float Snow::calculate_n_prime(float x) {
-    if (0 <= abs(x) && abs(x) < 1)
-        return (1.5f * abs(x) * x) - (2.f * x);
-    else if (1 <= abs(x) && abs(x) < 2)
+    if (0.f <= abs(x) && abs(x) < 1.f)
+        return (1.5 * abs(x) * x) - (2.f * x);
+    else if (1.f <= abs(x) && abs(x) < 2.f)
         return ((-0.5f) * abs(x) * x) + (2.f * x) - (2.f * abs(x) / x);
     else
         return 0.f;
@@ -145,7 +140,6 @@ Matrix3f Snow::particle_velocity_gradient(Vector3f evaluation_position) {
 Matrix3f Snow::psi(Matrix3f Fe, Matrix3f Fp) {
     float Je = Fe.determinant();
     float Jp = Fp.determinant();
-    float J = Je * Jp;
     float exponential = m_hardening * (1.f - Jp);
     float mu_fp = m_mu_0 * exp(exponential);
     float lambda_fp = m_lambda_0 * exp(exponential);
@@ -153,7 +147,7 @@ Matrix3f Snow::psi(Matrix3f Fe, Matrix3f Fp) {
     Matrix3f sigma = svd.singularValues().asDiagonal();
     Matrix3f Re = svd.matrixV() * sigma * svd.matrixV().transpose();
 
-    return (((2.f * mu_fp) / J) * (Fe - Re) * (Fe.transpose())) + (((lambda_fp / J) * (Je - 1.f) * Je) * Matrix3f::Identity());
+    return ((2.f * mu_fp) * (Fe - Re) * (Fe.transpose())) + ((lambda_fp * (Je - 1.f) * Je) * Matrix3f::Identity());
 }
 
 /**
@@ -267,7 +261,7 @@ void Snow::compute_grid_forces() {
         }
 
         cell->force = force;
-        if (totalWeight > 0) {
+        if (totalWeight > 0.f) {
             cell->deformation_gradient = totalDeformationGradient / totalWeight;
         } else {
             cell->deformation_gradient = Matrix3f::Identity();
@@ -305,29 +299,44 @@ void Snow::update_grid_velocity() {
  */
 void Snow::compute_grid_based_collisions() {
     float floor_height = -0.75f;
-    float mu = 0.3f;
+    float mu = 0.4f;
 
     #pragma omp parallel for
     for (GridCell* cell : m_grid) {
         Vector3f grid_index = cell->grid_index;
         Vector3f grid_pos = Vector3f(
-            (grid_index.x() - m_grid_size / 2.f) * m_grid_spacing,
-            (grid_index.y() - m_grid_size / 2.f) * m_grid_spacing,
-            (grid_index.z() - m_grid_size / 2.f) * m_grid_spacing
+            (grid_index.x() - m_grid_size / 2) * m_grid_spacing,
+            (grid_index.y() - m_grid_size / 2) * m_grid_spacing,
+            (grid_index.z() - m_grid_size / 2) * m_grid_spacing
         );
         if (grid_pos.z() <= floor_height) {
-            Vector3f v_rel = cell->velocity;
-            float vn = v_rel.z();
+            Vector3f v_rel = cell->velocity_star;
+            // float vn = v_rel.z();
+            Vector3f normal = Vector3f(0, 0, 1.0f);
+            float vn = v_rel.dot(normal);
 
             if (vn < 0) {
-                v_rel.z() = -vn * m_restitution;
-                Vector3f vt(v_rel.x(), v_rel.y(), 0);
-                if (vt.norm() > 0) {
-                    v_rel.x() -= vn * vt.normalized().x();
-                    v_rel.y() -= vn * vt.normalized().y();
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    cell->velocity_star = Vector3f::Zero();
+                } else {
+                    cell->velocity_star = vt + mu * vn * vt.normalized();
                 }
             }
-            cell->velocity = mu * v_rel;
+        }
+        if (grid_pos.x() <= floor_height){
+            Vector3f v_rel = cell->velocity_star;
+            Vector3f normal = Vector3f(1.0f, 0, 0);
+            float vn = v_rel.dot(normal);
+
+            if (vn < 0) {
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    cell->velocity_star = Vector3f::Zero();
+                } else {
+                    cell->velocity_star = vt + mu * vn * vt.normalized();
+                }
+            }
         }
     }
 }
@@ -354,10 +363,10 @@ void Snow::solve_linear_system() {
         for (int j = 0; j < totalCells; j++) {
             GridCell* cell_j = m_grid[j];
             if (cell_i->mass > 0 && cell_j->mass > 0) {
-                float mass_inverse = 1.f / cell_i->mass;
+                float mass_inverse = 1.0 / cell_i->mass;
                 
                 Matrix3f F_i = cell_i->deformation_gradient;
-                Matrix3f dFdF = 2.f * mu * F_i - 2.f * mu * Matrix3f::Identity() + lambda * (F_i.transpose() * F_i - Matrix3f::Identity());
+                Matrix3f dFdF = 2 * mu * F_i - 2 * mu * Matrix3f::Identity() + lambda * (F_i.transpose() * F_i - Matrix3f::Identity());
 
                 for (int k = 0; k < 3; k++) {
                     for (int l = 0; l < 3; l++) {
@@ -448,7 +457,7 @@ void Snow::update_particle_velocities() {
                 }
             }
         }
-        particle->velocity = ((1.f - m_alpha) * velocity_pic) + (m_alpha * velocity_flip);    
+        particle->velocity = ((1 - m_alpha) * velocity_pic) + (m_alpha * velocity_flip);    
     }
 }
 
@@ -461,26 +470,55 @@ void Snow::update_particle_velocities() {
  */
 void Snow::compute_particle_based_collisions() {
     float floor_height = -0.75f;
-    float mu = 0.3f;
+    float mu = 0.4f;
 
     #pragma omp parallel for
     for (Particle* particle : m_particles) {
+        // if (particle->position.z() <= floor_height) {
+        //     Vector3f v_rel = particle->velocity;
+        //     float vn = v_rel.z();
+
+        //     if (vn < 0) {
+        //         v_rel.z() = -vn * m_restitution;
+
+        //         Vector3f vt(v_rel.x(), v_rel.y(), 0);
+        //         if (vt.norm() > 0) {
+        //             v_rel.x() -= vn * vt.normalized().x();
+        //             v_rel.y() -= vn * vt.normalized().y();
+        //         }
+        //     }
+        //     particle->velocity = mu * v_rel;
+
+        //     particle->position.z() = floor_height;
+        // }
         if (particle->position.z() <= floor_height) {
             Vector3f v_rel = particle->velocity;
-            float vn = v_rel.z();
+            // float vn = v_rel.z();
+            Vector3f normal = Vector3f(0, 0, 1.0f);
+            float vn = v_rel.dot(normal);
 
             if (vn < 0) {
-                v_rel.z() = -vn * m_restitution;
-
-                Vector3f vt(v_rel.x(), v_rel.y(), 0);
-                if (vt.norm() > 0) {
-                    v_rel.x() -= vn * vt.normalized().x();
-                    v_rel.y() -= vn * vt.normalized().y();
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    particle->velocity = Vector3f::Zero();
+                } else {
+                    particle->velocity = vt + mu * vn * vt.normalized();
                 }
             }
-            particle->velocity = mu * v_rel;
+        }
+        if (particle->position.x() <= floor_height){
+            Vector3f v_rel = particle->velocity;
+            Vector3f normal = Vector3f(1.0f, 0, 0);
+            float vn = v_rel.dot(normal);
 
-            particle->position.z() = floor_height;
+            if (vn < 0) {
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    particle->velocity = Vector3f::Zero();
+                } else {
+                    particle->velocity = vt + mu * vn * vt.normalized();
+                }
+            }
         }
     }
 }
