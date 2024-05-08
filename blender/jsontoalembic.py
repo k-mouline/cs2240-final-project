@@ -56,7 +56,14 @@ def setup_ground(ground_data):
 def export_alembic(filepath):
   bpy.ops.wm.alembic_export(filepath=filepath)
 
+def clear_mesh_objects():
+  for obj in bpy.data.objects:
+    if obj.type == 'MESH':
+        bpy.data.objects.remove(obj, do_unlink=True)
+
 def main():
+  clear_mesh_objects()
+
   filename = bpy.path.abspath('//data/simulation.json')
   data = load_json_data(filename)
 
