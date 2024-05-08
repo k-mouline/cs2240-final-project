@@ -21,8 +21,8 @@ using json = nlohmann::json;
  */
 void Snow::create_initial_json(json &j) {
   // scene setup
-  j["scene_setup"]["resolution"] = {1920, 1080};
-  j["scene_setup"]["frame_range"] = {1, 200};
+  j["scene_setup"]["resolution"] = {640, 360};
+  j["scene_setup"]["frame_range"] = {1, 240};
   j["scene_setup"]["frame_rate"] = 24;
 
   // camera data
@@ -35,11 +35,19 @@ void Snow::create_initial_json(json &j) {
 
   // ground data
   j["ground"]["type"] = "plane";
-  j["ground"]["position"] = {0, 0, -5};
-  j["ground"]["scale"] = {50, 1, 50};
+  j["ground"]["position"] = {0, 0, -0.75};
+  j["ground"]["scale"] = {3, 3, 3};
   j["ground"]["material"]["color"] = {1, 1, 1, 1};
   j["ground"]["material"]["roughness"] = 0.9;
   j["ground"]["material"]["metallic"] = 0.0;
+
+  // wall data
+  j["wall"]["type"] = "plane";
+  j["wall"]["position"] = {-0.785, 0, 0};
+  j["wall"]["scale"] = {3, 3, 3};
+  j["wall"]["material"]["color"] = {1, 1, 1, 1};
+  j["wall"]["material"]["roughness"] = 0.9;
+  j["wall"]["material"]["metallic"] = 0.0;
 }
 
 /**
@@ -57,7 +65,7 @@ void Snow::add_particles_initial(nlohmann::json &j, vector<Particle*> particles)
       {"position", {p->position.x(), p->position.y(), p->position.z()}},
       {"scale", {1, 1, 1}},
       {"color", {1, 1, 1, 1}}, // RGBA
-      {"size", 0.01},
+      {"size", 0.005},
       {"animation", json::array()}
     };
     particles_map[p->id] = particle;

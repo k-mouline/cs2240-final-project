@@ -54,6 +54,11 @@ class Snow {
         void update_particle_positions();
         void update();
 
+        Vector3f sphere(float radius);
+        Vector3f cube();
+        Vector3f heart();
+        Vector3f bunny();
+
         // GETTER FUNCTIONS
         vector<Particle*> get_particles() { return m_particles; };
 
@@ -63,15 +68,15 @@ class Snow {
         static void add_particle_keyframe(nlohmann::json &j, vector<Particle*> particles, int frame);
         static void write_json_to_file(nlohmann::json &j);
 
-        const static int m_num_frames = 80;
+        const static int m_num_frames = 160;
 
     private:
         vector<Particle*> m_particles;
         vector<GridCell*> m_grid;
         int m_num_particles = 1000;
-        int m_grid_size = 25;
+        int m_grid_size = 12;
         float m_grid_spacing = 2.0 / m_grid_size;
-        Vector3f m_gravity = Vector3f(0, 0, -9.8);
+        Vector3f m_gravity = Vector3f(0, 0, -6);
         bool m_first = true;
         float m_timestep = (1.f/60.f);
         float m_alpha = 0.95;

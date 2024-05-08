@@ -13,6 +13,36 @@
     omp_out += omp_in) \
     initializer(omp_priv = Eigen::Matrix3f::Zero())
 
+Vector3f Snow::sphere(float radius) {
+    float theta =  M_PI * (rand() / (float)RAND_MAX);
+    float phi = 2.f * M_PI * (rand() / (float)RAND_MAX);
+    float r = radius * pow((rand() / (float)RAND_MAX), 1.f / 3.f);
+    float x = r * sin(theta) * cos(phi);
+    float y = r * sin(theta) * sin(phi);
+    float z = r * cos(theta);
+    return Vector3f(x, y, z);
+}
+
+Vector3f Snow::cube() {
+    float x = 2.f * (rand() / (float)RAND_MAX) - 1.f;
+    float y = 2.f * (rand() / (float)RAND_MAX) - 1.f;
+    float z = 2.f * (rand() / (float)RAND_MAX) - 1.f;
+    return Vector3f(x, y, z);
+}
+
+Vector3f Snow::heart() {
+    float t = 2.f * M_PI * (rand() / (float)RAND_MAX);
+    float x = 16 * pow(sin(t), 3);
+    float y = 13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t);
+    float z = 0;
+    return Vector3f(x, y, z);
+}
+
+Vector3f Snow::bunny() {
+    // TODO: generate a particle inside the bounds of the bunny object
+    return Vector3f::Zero();
+}
+
 Snow::Snow() {
     m_particles = std::vector<Particle*>();
     m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size);
@@ -20,19 +50,10 @@ Snow::Snow() {
     for (int i = 0; i < m_num_particles; i++) {
         Particle* p = new Particle;
         p->id = i;
-        // int spacing = sqrt(m_num_particles);
-        // p->position = Vector3f(((i % spacing) / (float)(spacing)), ((i / spacing) / (float)(spacing)), 1);
-        // randomly place the particle in a radius 0.25 sphere about the origin
-        float radius = 0.25;
-        float theta =  M_PI * (rand() / (float)RAND_MAX);
-        float phi = 2 * M_PI * (rand() / (float)RAND_MAX);
-        float r = radius * pow((rand() / (float)RAND_MAX), 1.f / 3.f);
-        float x = r * sin(theta) * cos(phi);
-        float y = r * sin(theta) * sin(phi);
-        float z = r * cos(theta);
-        p->position = Vector3f(x, y, z);
-        p->velocity = Vector3f::Zero();
-        p->mass = 0.1;
+        p->position = sphere(0.25f);
+        // p->velocity = Vector3f::Zero();
+        p->velocity = Vector3f(-5, 0, 0);
+        p->mass = 0.1f;
         p->deformation_gradient_elastic = Matrix3f::Identity();
         p->deformation_gradient_plastic = Matrix3f::Identity();
         m_particles.push_back(p);
@@ -42,7 +63,7 @@ Snow::Snow() {
     for (int index = 0; index < totalCells; index++) {
         GridCell* cell = new GridCell;
         cell->grid_index = Vector3f(index % m_grid_size, (index / m_grid_size) % m_grid_size, index / (m_grid_size * m_grid_size));
-        cell->mass = 0;
+        cell->mass = 0.f;
         cell->velocity = Vector3f::Zero();
         cell->force = Vector3f::Zero();
         m_grid[index] = cell;
@@ -61,7 +82,7 @@ Snow::~Snow() {
 
 Vector3f Snow::get_grid_coords(Vector3f position) {
     // gets the appropriate grid coordinates for a particle based off of its position
-    return Vector3f(floor(m_grid_size * (position.x() + 1) / 2), floor(m_grid_size * (position.y() + 1) / 2), floor(m_grid_size * (position.z() + 1) / 2));
+    return Vector3f(floor(m_grid_size * (position.x() + 1.f) / 2.f), floor(m_grid_size * (position.y() + 1.f) / 2.f), floor(m_grid_size * (position.z() + 1.f) / 2.f));
 }
 
 int Snow::get_grid_index(Vector3f grid_coords) {
@@ -80,20 +101,20 @@ float Snow::particle_weight(Vector3f grid_index, Vector3f evaluation_position) {
 
 float Snow::calculate_n(float x) {
     if (0 <= abs(x) && abs(x) < 1)
-        return (0.5 * pow(abs(x), 3)) - pow(abs(x), 2) + (2.f / 3.f);
+        return (0.5f * pow(abs(x), 3.f)) - pow(abs(x), 2.f) + (2.f / 3.f);
     else if (1 <= abs(x) && abs(x) < 2)
-        return ((-1.f / 6.f) * pow(abs(x), 3)) + pow(abs(x), 2) - (2 * abs(x)) + (4.f / 3.f);
+        return ((-1.f / 6.f) * pow(abs(x), 3)) + pow(abs(x), 2.f) - (2.f * abs(x)) + (4.f / 3.f);
     else
         return 0;
 }
 
 float Snow::calculate_n_prime(float x) {
-    if (0 <= abs(x) && abs(x) < 1)
+    if (0.f <= abs(x) && abs(x) < 1.f)
         return (1.5 * abs(x) * x) - (2.f * x);
-    else if (1 <= abs(x) && abs(x) < 2)
-        return ((-0.5) * abs(x) * x) + (2.f * x) - (2.f * abs(x) / x);
+    else if (1.f <= abs(x) && abs(x) < 2.f)
+        return ((-0.5f) * abs(x) * x) + (2.f * x) - (2.f * abs(x) / x);
     else
-        return 0;
+        return 0.f;
 }
 
 Vector3f Snow::particle_weight_gradient(Vector3f grid_index, Vector3f evaluation_position) {
@@ -119,15 +140,14 @@ Matrix3f Snow::particle_velocity_gradient(Vector3f evaluation_position) {
 Matrix3f Snow::psi(Matrix3f Fe, Matrix3f Fp) {
     float Je = Fe.determinant();
     float Jp = Fp.determinant();
-    float J = Je * Jp;
-    float exponential = m_hardening * (1 - Jp);
+    float exponential = m_hardening * (1.f - Jp);
     float mu_fp = m_mu_0 * exp(exponential);
     float lambda_fp = m_lambda_0 * exp(exponential);
     JacobiSVD<Matrix3f> svd(Fe, ComputeFullU | ComputeFullV);
     Matrix3f sigma = svd.singularValues().asDiagonal();
     Matrix3f Re = svd.matrixV() * sigma * svd.matrixV().transpose();
 
-    return (((2.f * mu_fp) / J) * (Fe - Re) * (Fe.transpose())) + (((lambda_fp / J) * (Je - 1) * Je) * Matrix3f::Identity());
+    return ((2.f * mu_fp) * (Fe - Re) * (Fe.transpose())) + ((lambda_fp * (Je - 1.f) * Je) * Matrix3f::Identity());
 }
 
 /**
@@ -143,7 +163,7 @@ void Snow::rasterize_grid() {
     #pragma omp parallel for
     for (int grid_cell = 0; grid_cell < (int)m_grid.size(); grid_cell++) {
         // for each grid cell, we need to calculate the mass and velocity
-        float mass = 0;
+        float mass = 0.f;
         Vector3f velocity = Vector3f::Zero();
         // sum across the particles
         #pragma omp parallel for reduction(+:mass)
@@ -188,7 +208,7 @@ void Snow::compute_particle_volumes() {
     #pragma omp parallel for
     for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
         Particle* particle = m_particles[particle_index];
-        float density = 0;
+        float density = 0.f;
         // for (int grid_index = 0; grid_index < (int)m_grid.size(); grid_index++) {
         //     GridCell* cell = m_grid[grid_index];
         //     density += cell->density * particle_weight(cell->grid_index, particle->position);
@@ -227,7 +247,7 @@ void Snow::compute_grid_forces() {
         GridCell* cell = m_grid[grid_index];
         Vector3f force = Vector3f::Zero();
         Matrix3f totalDeformationGradient = Matrix3f::Zero();
-        float totalWeight = 0;
+        float totalWeight = 0.f;
 
         #pragma omp parallel for reduction(VectorSum:force) reduction(MatrixSum:totalDeformationGradient) reduction(+:totalWeight)
         for (int particle_index = 0; particle_index < m_num_particles; particle_index++) {
@@ -241,7 +261,7 @@ void Snow::compute_grid_forces() {
         }
 
         cell->force = force;
-        if (totalWeight > 0) {
+        if (totalWeight > 0.f) {
             cell->deformation_gradient = totalDeformationGradient / totalWeight;
         } else {
             cell->deformation_gradient = Matrix3f::Identity();
@@ -278,8 +298,8 @@ void Snow::update_grid_velocity() {
  * to the ground.
  */
 void Snow::compute_grid_based_collisions() {
-    float floor_height = -0.75;
-    float mu = 0.3f;
+    float floor_height = -0.75f;
+    float mu = 0.4f;
 
     #pragma omp parallel for
     for (GridCell* cell : m_grid) {
@@ -290,18 +310,33 @@ void Snow::compute_grid_based_collisions() {
             (grid_index.z() - m_grid_size / 2) * m_grid_spacing
         );
         if (grid_pos.z() <= floor_height) {
-            Vector3f v_rel = cell->velocity;
-            float vn = v_rel.z();
+            Vector3f v_rel = cell->velocity_star;
+            // float vn = v_rel.z();
+            Vector3f normal = Vector3f(0, 0, 1.0f);
+            float vn = v_rel.dot(normal);
 
             if (vn < 0) {
-                v_rel.z() = -vn * m_restitution;
-                Vector3f vt(v_rel.x(), v_rel.y(), 0);
-                if (vt.norm() > 0) {
-                    v_rel.x() -= vn * vt.normalized().x();
-                    v_rel.y() -= vn * vt.normalized().y();
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    cell->velocity_star = Vector3f::Zero();
+                } else {
+                    cell->velocity_star = vt + mu * vn * vt.normalized();
                 }
             }
-            cell->velocity = mu * v_rel;
+        }
+        if (grid_pos.x() <= floor_height){
+            Vector3f v_rel = cell->velocity_star;
+            Vector3f normal = Vector3f(1.0f, 0, 0);
+            float vn = v_rel.dot(normal);
+
+            if (vn < 0) {
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    cell->velocity_star = Vector3f::Zero();
+                } else {
+                    cell->velocity_star = vt + mu * vn * vt.normalized();
+                }
+            }
         }
     }
 }
@@ -434,27 +469,56 @@ void Snow::update_particle_velocities() {
  * to the ground.
  */
 void Snow::compute_particle_based_collisions() {
-    float floor_height = -0.75;
-    float mu = 0.3f;
+    float floor_height = -0.75f;
+    float mu = 0.4f;
 
     #pragma omp parallel for
     for (Particle* particle : m_particles) {
+        // if (particle->position.z() <= floor_height) {
+        //     Vector3f v_rel = particle->velocity;
+        //     float vn = v_rel.z();
+
+        //     if (vn < 0) {
+        //         v_rel.z() = -vn * m_restitution;
+
+        //         Vector3f vt(v_rel.x(), v_rel.y(), 0);
+        //         if (vt.norm() > 0) {
+        //             v_rel.x() -= vn * vt.normalized().x();
+        //             v_rel.y() -= vn * vt.normalized().y();
+        //         }
+        //     }
+        //     particle->velocity = mu * v_rel;
+
+        //     particle->position.z() = floor_height;
+        // }
         if (particle->position.z() <= floor_height) {
             Vector3f v_rel = particle->velocity;
-            float vn = v_rel.z();
+            // float vn = v_rel.z();
+            Vector3f normal = Vector3f(0, 0, 1.0f);
+            float vn = v_rel.dot(normal);
 
             if (vn < 0) {
-                v_rel.z() = -vn * m_restitution;
-
-                Vector3f vt(v_rel.x(), v_rel.y(), 0);
-                if (vt.norm() > 0) {
-                    v_rel.x() -= vn * vt.normalized().x();
-                    v_rel.y() -= vn * vt.normalized().y();
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    particle->velocity = Vector3f::Zero();
+                } else {
+                    particle->velocity = vt + mu * vn * vt.normalized();
                 }
             }
-            particle->velocity = mu * v_rel;
+        }
+        if (particle->position.x() <= floor_height){
+            Vector3f v_rel = particle->velocity;
+            Vector3f normal = Vector3f(1.0f, 0, 0);
+            float vn = v_rel.dot(normal);
 
-            particle->position.z() = floor_height;
+            if (vn < 0) {
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    particle->velocity = Vector3f::Zero();
+                } else {
+                    particle->velocity = vt + mu * vn * vt.normalized();
+                }
+            }
         }
     }
 }
