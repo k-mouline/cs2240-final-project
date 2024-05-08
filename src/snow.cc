@@ -43,7 +43,8 @@ Vector3f Snow::bunny() {
     return Vector3f::Zero();
 }
 
-Snow::Snow() {
+Snow::Snow(int num_frames, int num_particles, int grid_size) :
+    m_num_frames(num_frames), m_num_particles(num_particles), m_grid_size(grid_size) {
     m_particles = std::vector<Particle*>();
     m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size);
 

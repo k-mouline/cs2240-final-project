@@ -31,7 +31,7 @@ class Snow {
             Vector3f force;
             Matrix3f deformation_gradient;
         };
-        Snow();
+        Snow(int numFrames, int numParticles, int gridSize);
         ~Snow();
 
         // starting positions
@@ -70,13 +70,13 @@ class Snow {
         static void add_particle_keyframe(nlohmann::json &j, vector<Particle*> particles, int frame);
         static void write_json_to_file(nlohmann::json &j);
 
-        const static int m_num_frames = 60;
+        int m_num_frames;
 
     private:
         vector<Particle*> m_particles;
         vector<GridCell*> m_grid;
-        int m_num_particles = 400;
-        int m_grid_size = 5;
+        int m_num_particles;
+        int m_grid_size;
         float m_grid_spacing = 2.0 / m_grid_size;
         Vector3f m_gravity = Vector3f(0, 0, -6);
         bool m_first = true;
