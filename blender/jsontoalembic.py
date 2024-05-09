@@ -1,5 +1,6 @@
 import bpy
 import json
+import sys
 
 def load_json_data(filename):
   with open(filename, 'r') as file:
@@ -36,6 +37,9 @@ def create_particle(particle_data):
   mat.diffuse_color = particle_data['color']
   sphere.data.materials.append(mat)
 
+  bpy.context.view_layer.objects.active = sphere
+  sphere.select_set(True)
+
   for anim in particle_data['animation']:
     sphere.location = tuple(anim['position'])
     sphere.keyframe_insert(data_path="location", frame=anim['frame'])
@@ -56,10 +60,14 @@ def setup_ground(ground_data):
 def export_alembic(filepath):
   bpy.ops.wm.alembic_export(filepath=filepath)
 
+def save_blend_file():
+  blend_file_path = bpy.path.abspath(f"//output/rendered_project-{sys.argv[2]}.blend")
+  bpy.ops.wm.save_as_mainfile(filepath=blend_file_path)
+
 def clear_mesh_objects():
   for obj in bpy.data.objects:
     if obj.type == 'MESH':
-        bpy.data.objects.remove(obj, do_unlink=True)
+      bpy.data.objects.remove(obj, do_unlink=True)
 
 def main():
   clear_mesh_objects()
@@ -76,6 +84,8 @@ def main():
   setup_ground(data['ground'])
 
   export_alembic(bpy.path.abspath('//data/exported_scene.abc'))
+  save_blend_file()
 
 if __name__ == "__main__":
     main()
+
