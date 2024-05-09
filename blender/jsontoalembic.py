@@ -50,7 +50,7 @@ def setup_ground(ground_data):
   ground = bpy.context.object
   ground.name = "Ground"
   ground.location = tuple(ground_data['position'])
-  ground.scale = tuple(ground_data['scale'])
+  ground.scale = (ground_data['scale'])
 
   mat = bpy.data.materials.new(name="Ground_Material")
   mat.diffuse_color = ground_data['material']['color']
@@ -68,6 +68,18 @@ def clear_mesh_objects():
     if obj.type == 'MESH':
       bpy.data.objects.remove(obj, do_unlink=True)
 
+def setup_sphere(sphere_data):
+  # bpy.ops.mesh.primitive_plane_add(size=1)
+  bpy.ops.mesh.primitive_uv_sphere_add(radius=sphere_data['radius'])
+  sphere = bpy.context.object
+  sphere.name = "ball"
+  sphere.location = tuple(sphere_data['position'])
+  # sphere.scale = tuple(sphere_data['scale'])
+
+  mat = bpy.data.materials.new(name="Sphere_Material")
+  mat.diffuse_color = sphere_data['material']['color']
+  sphere.data.materials.append(mat)
+
 def main():
   clear_mesh_objects()
 
@@ -84,6 +96,7 @@ def main():
     create_particle(particle, mat)
 
   setup_ground(data['ground'])
+  setup_sphere(data['ball'])
   print("Exporting Alembic file...")
   export_alembic(bpy.path.abspath('//data/exported_scene.abc'))
   print("Alembic file exported successfully!")

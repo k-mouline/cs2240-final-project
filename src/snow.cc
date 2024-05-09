@@ -60,9 +60,9 @@ Snow::Snow(int num_frames, int num_particles, int grid_size, string shape) :
         else if (shape == "bunny")
             p->position = bunny();
         else
-            p->position = sphere(0.1f);
-        // p->velocity = Vector3f::Zero();
-        p->velocity = Vector3f(-5, 0, 0);
+            p->position = sphere(0.1f); // changed from 0.1
+        p->velocity = Vector3f::Zero();
+        // p->velocity = Vector3f(-5, 0, 0);
         p->mass = 0.1f;
         p->deformation_gradient_elastic = Matrix3f::Identity();
         p->deformation_gradient_plastic = Matrix3f::Identity();

@@ -1,5 +1,5 @@
 # Compiler settings
-CXX = g++-11
+CXX = g++-13
 CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen -fopenmp -MMD -MP
 
 # Build directory

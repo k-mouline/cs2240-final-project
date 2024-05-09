@@ -33,7 +33,7 @@ void Snow::create_initial_json(json &j, int num_frames) {
   // particles is an array of objects of size m_num_particles
   j["particles"] = json::array();
 
-  // ground data
+  // // ground data
   j["ground"]["type"] = "plane";
   j["ground"]["position"] = {0, 0, -0.775};
   j["ground"]["scale"] = {3, 3, 3};
@@ -50,9 +50,10 @@ void Snow::create_initial_json(json &j, int num_frames) {
   // j["wall"]["material"]["metallic"] = 0.0;
 
   j["ball"]["type"] = "sphere";
-  j["ball"]["position"] = {0, 0, -0.3};
-  j["ball"]["radius"] = 0.6;
-  j["ball"]["material"]["color"] = {1, 1, 1, 1};
+  j["ball"]["position"] = {0, 0, -0.36};
+  j["ball"]["radius"] = 0.15;
+  // j["ball"]["scale"] = {0.4, 0.4, 0.4};
+  j["ball"]["material"]["color"] = {1, 0, 0, 1};
   j["ball"]["material"]["roughness"] = 0.9;
   j["ball"]["material"]["metallic"] = 0.0;
 
