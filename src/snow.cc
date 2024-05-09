@@ -51,7 +51,7 @@ Snow::Snow(int num_frames, int num_particles, int grid_size) :
     for (int i = 0; i < m_num_particles; i++) {
         Particle* p = new Particle;
         p->id = i;
-        p->position = sphere(0.25f);
+        p->position = sphere(0.1f);
         // p->velocity = Vector3f::Zero();
         p->velocity = Vector3f(-5, 0, 0);
         p->mass = 0.1f;

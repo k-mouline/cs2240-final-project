@@ -18,7 +18,7 @@ def render_scene():
 
 def save_blend_file():
   blend_file_path = bpy.path.abspath(f"//output/rendered_project-{timestamp}.blend")
-  bpy.ops.wm.save_as_mainfile(filepath=blend_file_path)
+  bpy.ops.wm.save_as_mainfile(filepath=blend_file_path, animation=True)
 
 def clear_mesh_objects():
   for obj in bpy.data.objects:

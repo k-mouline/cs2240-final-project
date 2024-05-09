@@ -15,11 +15,6 @@ int main(int argc, char** argv) {
   int num_particles = std::atoi(argv[2]);
   int grid_size = std::atoi(argv[3]);
 
-  if (sqrt(num_particles) != floor(sqrt(num_particles))) {
-    std::cerr << "Number of particles must be a perfect square." << std::endl;
-    return 1;
-  }
-
   json j;
   Snow::create_initial_json(j);
 

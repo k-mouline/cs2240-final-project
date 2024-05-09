@@ -14,8 +14,8 @@ SRC = $(wildcard src/*.cc)
 # Object files
 OBJ = $(SRC:src/%.cc=$(BUILD_DIR)/%.o)
 
-# stuff for pragma
-OMP_NUM_THREADS = 8
+# stuff for pragma - edit # of threads based on # of cores on your machine
+OMP_NUM_THREADS = 9
 LDFLAGS="-L/opt/homebrew/opt/llvm/lib" -fopenmp
 CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 

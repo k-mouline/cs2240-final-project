@@ -33,16 +33,6 @@ if [ ${#num_frames_list[@]} -ne $num_runs ] || [ ${#num_particles_list[@]} -ne $
   exit 1
 fi
 
-# number of particles must be a perfect square
-for num_particles in "${num_particles_list[@]}"
-do
-  sqrt=$(echo "sqrt($num_particles)" | bc)
-  if [ $sqrt -ne ${sqrt%.*} ]; then
-    echo "ERROR: Number of particles must be a perfect square"
-    exit 1
-  fi
-done
-
 for (( i=0; i<$num_runs; i++ ))
 do
   num_frames=${num_frames_list[$i]}
