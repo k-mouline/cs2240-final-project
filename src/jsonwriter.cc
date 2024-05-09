@@ -19,10 +19,10 @@ using json = nlohmann::json;
  * Scene setup, camera, ground data added
  * Particle data not yet added
  */
-void Snow::create_initial_json(json &j) {
+void Snow::create_initial_json(json &j, int num_frames) {
   // scene setup
   j["scene_setup"]["resolution"] = {640, 360};
-  j["scene_setup"]["frame_range"] = {1, 240};
+  j["scene_setup"]["frame_range"] = {1, num_frames};
   j["scene_setup"]["frame_rate"] = 24;
 
   // camera data

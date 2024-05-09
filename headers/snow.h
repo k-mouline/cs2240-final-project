@@ -31,12 +31,12 @@ class Snow {
             Vector3f force;
             Matrix3f deformation_gradient;
         };
-        Snow(int numFrames, int numParticles, int gridSize);
+        Snow(int numFrames, int numParticles, int gridSize, string shape);
         ~Snow();
 
         // starting positions
         Vector3f sphere(float radius);
-        Vector3f cube();
+        Vector3f cube(float radius);
         Vector3f heart();
         Vector3f bunny();
 
@@ -65,7 +65,7 @@ class Snow {
         vector<Particle*> get_particles() { return m_particles; };
 
         // JSON FUNCTIONS
-        static void create_initial_json(nlohmann::json &j);
+        static void create_initial_json(nlohmann::json &j, int num_frames);
         static void add_particles_initial(nlohmann::json &j, vector<Particle*> particles);
         static void add_particle_keyframe(nlohmann::json &j, vector<Particle*> particles, int frame);
         static void write_json_to_file(nlohmann::json &j);

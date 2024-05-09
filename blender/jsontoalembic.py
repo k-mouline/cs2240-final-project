@@ -1,6 +1,7 @@
 import bpy
 import json
 import sys
+from tqdm import tqdm
 
 def load_json_data(filename):
   with open(filename, 'r') as file:
@@ -25,7 +26,7 @@ def setup_camera(camera_data):
   camera.rotation_euler = tuple(camera_data['rotation'])
   camera.data.angle = camera_data['fov'] * (3.14159 / 180)
 
-def create_particle(particle_data):
+def create_particle(particle_data, material):
   bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=4, radius=particle_data['size'])
   sphere = bpy.context.object
   sphere.name = particle_data['name']
@@ -33,9 +34,7 @@ def create_particle(particle_data):
   sphere.location = tuple(particle_data['position'])
   sphere.scale = tuple(particle_data['scale'])
 
-  mat = bpy.data.materials.new(name=f"{particle_data['name']}_Material")
-  mat.diffuse_color = particle_data['color']
-  sphere.data.materials.append(mat)
+  sphere.data.materials.append(material)
 
   bpy.context.view_layer.objects.active = sphere
   sphere.select_set(True)
@@ -78,14 +77,18 @@ def main():
   setup_scene(data['scene_setup'])
   setup_camera(data['camera'])
 
-  for particle in data['particles']:
-    create_particle(particle)
+  mat = bpy.data.materials.new(name="Particle_Material")
+  mat.diffuse_color = data['particles'][0]['color']
+
+  for particle in tqdm(data['particles']):
+    create_particle(particle, mat)
 
   setup_ground(data['ground'])
-
+  print("Exporting Alembic file...")
   export_alembic(bpy.path.abspath('//data/exported_scene.abc'))
+  print("Alembic file exported successfully!")
   save_blend_file()
+  print("Blend file saved successfully!")
 
 if __name__ == "__main__":
     main()
-

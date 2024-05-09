@@ -23,10 +23,10 @@ Vector3f Snow::sphere(float radius) {
     return Vector3f(x, y, z);
 }
 
-Vector3f Snow::cube() {
-    float x = 2.f * (rand() / (float)RAND_MAX) - 1.f;
-    float y = 2.f * (rand() / (float)RAND_MAX) - 1.f;
-    float z = 2.f * (rand() / (float)RAND_MAX) - 1.f;
+Vector3f Snow::cube(float radius) {
+    float x = (rand() / (float)RAND_MAX) * radius;
+    float y = (rand() / (float)RAND_MAX) * radius;
+    float z = (rand() / (float)RAND_MAX) * radius;
     return Vector3f(x, y, z);
 }
 
@@ -43,7 +43,7 @@ Vector3f Snow::bunny() {
     return Vector3f::Zero();
 }
 
-Snow::Snow(int num_frames, int num_particles, int grid_size) :
+Snow::Snow(int num_frames, int num_particles, int grid_size, string shape) :
     m_num_frames(num_frames), m_num_particles(num_particles), m_grid_size(grid_size) {
     m_particles = std::vector<Particle*>();
     m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size);
@@ -51,7 +51,16 @@ Snow::Snow(int num_frames, int num_particles, int grid_size) :
     for (int i = 0; i < m_num_particles; i++) {
         Particle* p = new Particle;
         p->id = i;
-        p->position = sphere(0.1f);
+        if (shape == "sphere")
+            p->position = sphere(0.25f);
+        else if (shape == "cube")
+            p->position = cube(0.25f);
+        else if (shape == "heart")
+            p->position = heart();
+        else if (shape == "bunny")
+            p->position = bunny();
+        else
+            p->position = sphere(0.1f);
         // p->velocity = Vector3f::Zero();
         p->velocity = Vector3f(-5, 0, 0);
         p->mass = 0.1f;
