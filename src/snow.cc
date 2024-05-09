@@ -334,20 +334,41 @@ void Snow::compute_grid_based_collisions() {
                 }
             }
         }
-        if (grid_pos.x() <= floor_height){
-            Vector3f v_rel = cell->velocity_star;
-            Vector3f normal = Vector3f(1.0f, 0, 0);
-            float vn = v_rel.dot(normal);
+        // if (grid_pos.x() <= floor_height){
+        //     Vector3f v_rel = cell->velocity_star;
+        //     Vector3f normal = Vector3f(1.0f, 0, 0);
+        //     float vn = v_rel.dot(normal);
+
+        //     if (vn < 0) {
+        //         Vector3f vt = v_rel - vn * normal;
+        //         if (vt.norm() <= -mu * vn) {
+        //             cell->velocity_star = Vector3f::Zero();
+        //         } else {
+        //             cell->velocity_star = vt + mu * vn * vt.normalized();
+        //         }
+        //     }
+        // }
+        const float sphere_radius = 0.2f;
+        const Vector3f sphere_centroid(0, 0, -0.4); 
+
+        Vector3f relative_pos = grid_pos - sphere_centroid; 
+        if (relative_pos.norm() <= sphere_radius) {
+            // Calculate relative velocity
+            Vector3f v_rel = cell->velocity;
+            float vn = v_rel.dot(relative_pos.normalized());
 
             if (vn < 0) {
-                Vector3f vt = v_rel - vn * normal;
-                if (vt.norm() <= -mu * vn) {
-                    cell->velocity_star = Vector3f::Zero();
-                } else {
-                    cell->velocity_star = vt + mu * vn * vt.normalized();
+                v_rel -= vn * relative_pos.normalized() * m_restitution;
+                Vector3f vt = v_rel - vn * relative_pos.normalized();
+                float vt_norm = vt.norm();
+                if (vt_norm > 0) {
+                    float friction_factor = mu * vn / vt_norm;
+                    v_rel -= friction_factor * vt;
                 }
+                cell->velocity = v_rel;
             }
         }
+
     }
 }
 
@@ -516,20 +537,41 @@ void Snow::compute_particle_based_collisions() {
                 }
             }
         }
-        if (particle->position.x() <= floor_height){
+        const float sphere_radius = 0.2f;
+        const Vector3f sphere_centroid(0, 0, -0.4); 
+        Vector3f relative_pos = particle->position - sphere_centroid;
+        if (relative_pos.norm() <= sphere_radius) {
+            
             Vector3f v_rel = particle->velocity;
-            Vector3f normal = Vector3f(1.0f, 0, 0);
-            float vn = v_rel.dot(normal);
+            float vn = v_rel.dot(relative_pos.normalized());
 
             if (vn < 0) {
-                Vector3f vt = v_rel - vn * normal;
-                if (vt.norm() <= -mu * vn) {
-                    particle->velocity = Vector3f::Zero();
-                } else {
-                    particle->velocity = vt + mu * vn * vt.normalized();
+                v_rel -= vn * relative_pos.normalized() * m_restitution;
+                Vector3f vt = v_rel - vn * relative_pos.normalized();
+                float vt_norm = vt.norm();
+                if (vt_norm > 0) {
+                    float friction_factor = mu * vn / vt_norm;
+                    v_rel -= friction_factor * vt;
                 }
+
+                particle->velocity = v_rel;
             }
+            particle->position = sphere_centroid + sphere_radius * relative_pos.normalized();
         }
+        // if (particle->position.x() <= floor_height){
+        //     Vector3f v_rel = particle->velocity;
+        //     Vector3f normal = Vector3f(1.0f, 0, 0);
+        //     float vn = v_rel.dot(normal);
+
+        //     if (vn < 0) {
+        //         Vector3f vt = v_rel - vn * normal;
+        //         if (vt.norm() <= -mu * vn) {
+        //             particle->velocity = Vector3f::Zero();
+        //         } else {
+        //             particle->velocity = vt + mu * vn * vt.normalized();
+        //         }
+        //     }
+        // }
     }
 }
 

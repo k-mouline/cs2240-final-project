@@ -35,19 +35,27 @@ void Snow::create_initial_json(json &j, int num_frames) {
 
   // ground data
   j["ground"]["type"] = "plane";
-  j["ground"]["position"] = {0, 0, -0.75};
+  j["ground"]["position"] = {0, 0, -0.775};
   j["ground"]["scale"] = {3, 3, 3};
   j["ground"]["material"]["color"] = {1, 1, 1, 1};
   j["ground"]["material"]["roughness"] = 0.9;
   j["ground"]["material"]["metallic"] = 0.0;
 
   // wall data
-  j["wall"]["type"] = "plane";
-  j["wall"]["position"] = {-0.785, 0, 0};
-  j["wall"]["scale"] = {3, 3, 3};
-  j["wall"]["material"]["color"] = {1, 1, 1, 1};
-  j["wall"]["material"]["roughness"] = 0.9;
-  j["wall"]["material"]["metallic"] = 0.0;
+  // j["wall"]["type"] = "plane";
+  // j["wall"]["position"] = {-0.785, 0, 0};
+  // j["wall"]["scale"] = {3, 3, 3};
+  // j["wall"]["material"]["color"] = {1, 1, 1, 1};
+  // j["wall"]["material"]["roughness"] = 0.9;
+  // j["wall"]["material"]["metallic"] = 0.0;
+
+  j["ball"]["type"] = "sphere";
+  j["ball"]["position"] = {0, 0, -0.3};
+  j["ball"]["radius"] = 0.6;
+  j["ball"]["material"]["color"] = {1, 1, 1, 1};
+  j["ball"]["material"]["roughness"] = 0.9;
+  j["ball"]["material"]["metallic"] = 0.0;
+
 }
 
 /**
