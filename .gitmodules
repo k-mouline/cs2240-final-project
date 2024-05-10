@@ -1,9 +1,6 @@
 [submodule "Eigen"]
 	path = Eigen
 	url = https://github.com/brown-cs-224/Eigen.git
-[submodule "alembic"]
-	path = alembic
-	url = https://github.com/alembic/alembic
 [submodule "external/Imath"]
 	path = external/Imath
 	url = https://github.com/AcademySoftwareFoundation/Imath.git
