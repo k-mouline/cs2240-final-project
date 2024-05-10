@@ -33,8 +33,15 @@ class Snow {
             Vector3f force;
             Matrix3f deformation_gradient;
         };
-        Snow();
+        Snow(int numFrames, int numParticles, int gridSize, string shape);
         ~Snow();
+
+        // starting positions
+        Vector3f sphere(float radius);
+        Vector3f cube(float radius);
+        Vector3f heart();
+        Vector3f bunny();
+
         Vector3f get_grid_coords(Vector3f position);
         int get_grid_index(Vector3f grid_coords);
         void rasterize_grid();
@@ -60,33 +67,20 @@ class Snow {
         vector<Particle*> get_particles() { return m_particles; };
 
         // JSON FUNCTIONS
-        static void create_initial_json(nlohmann::json &j);
+        static void create_initial_json(nlohmann::json &j, int num_frames);
         static void add_particles_initial(nlohmann::json &j, vector<Particle*> particles);
         static void add_particle_keyframe(nlohmann::json &j, vector<Particle*> particles, int frame);
         static void write_json_to_file(nlohmann::json &j);
 
-        // ABC FUNCTIONS
-        // static void write_scene_setup_to_abc(Alembic::AbcGeom::OObject& parent);
-        // static void write_camera_to_abc(Alembic::AbcGeom::OObject& parent);
-        // static void write_ground_to_abc(Alembic::AbcGeom::OObject& parent);
-        // static void write_particles_to_abc(Alembic::AbcGeom::OObject& parent, std::vector<Particle*>& particles);
-        // static void write_abc_to_file(const std::string& filename, std::vector<Particle*>& particles);
-
-        // static void initialize_alembic(const std::string& filename);
-        // static void write_initial_scene_setup();
-        // static void add_initial_particles(const std::vector<Particle*>& particles);
-        // static void add_particle_keyframes(const std::vector<Particle*>& particles, int frame);
-        // static void finalize_alembic();
-
-        const static int m_num_frames = 20;
+        int m_num_frames;
 
     private:
         vector<Particle*> m_particles;
         vector<GridCell*> m_grid;
-        int m_num_particles = 400; // must be perfect square
-        int m_grid_size = 5;
+        int m_num_particles;
+        int m_grid_size;
         float m_grid_spacing = 2.0 / m_grid_size;
-        Vector3f m_gravity = Vector3f(0, 0, -9.8);
+        Vector3f m_gravity = Vector3f(0, 0, -6);
         bool m_first = true;
         float m_timestep = (1.f/60.f);
         float m_alpha = 0.95;
@@ -97,8 +91,5 @@ class Snow {
         float m_mu_0 = m_youngs_modulus / (2 * (1 + m_poissons_ratio));
         float m_compression = 2.5e-2;
         float m_stretch = 7.5e-3;
-        float m_restitution = 0.15;
-        // static Alembic::Abc::OArchive m_archive;
-        // static Alembic::AbcGeom::OObject m_root;
-        // static std::vector<Alembic::AbcGeom::OXform> m_particleXforms;
+        float m_restitution = 0.05;
 };

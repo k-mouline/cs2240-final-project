@@ -2,11 +2,6 @@
 CXX = g++-11
 CXXFLAGS = -std=c++17 -Wall -Iheaders -IEigen -fopenmp -MMD -MP
 
-# Linker settings
-LDFLAGS = -L$(shell brew --prefix llvm)/lib -fopenmp
-CPPFLAGS = -I$(shell brew --prefix llvm)/include
-# LDLIBS = -lAlembic -lImath
-
 # Build directory
 BUILD_DIR = build
 
@@ -24,12 +19,17 @@ SRC = $(wildcard src/*.cc)
 # Object files
 OBJ = $(SRC:src/%.cc=$(BUILD_DIR)/%.o)
 
+# stuff for pragma - edit # of threads based on # of cores on your machine
+OMP_NUM_THREADS = 9
+LDFLAGS="-L/opt/homebrew/opt/llvm/lib" -fopenmp
+CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+
 # Default target
 all: $(TARGET)
 
 # Linking the target executable
 $(TARGET): $(OBJ)
-	$(CXX) $(LDFLAGS) $(OBJ) -o $@ $(LDLIBS)
+	$(CXX) $(LDFLAGS) $(OBJ) -o $@
 
 # Compiling every source file
 $(BUILD_DIR)/%.o: src/%.cc

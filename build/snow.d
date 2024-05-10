@@ -14,10 +14,11 @@ build/snow.o: src/snow.cc headers/snow.h Eigen/Eigen Eigen/Dense \
  Eigen/src/Core/arch/Default/BFloat16.h \
  Eigen/src/Core/arch/Default/TypeCasting.h \
  Eigen/src/Core/arch/Default/GenericPacketMathFunctionsFwd.h \
- Eigen/src/Core/arch/SSE/PacketMath.h \
- Eigen/src/Core/arch/SSE/TypeCasting.h \
- Eigen/src/Core/arch/SSE/MathFunctions.h \
- Eigen/src/Core/arch/SSE/Complex.h Eigen/src/Core/arch/Default/Settings.h \
+ Eigen/src/Core/arch/NEON/PacketMath.h \
+ Eigen/src/Core/arch/NEON/TypeCasting.h \
+ Eigen/src/Core/arch/NEON/MathFunctions.h \
+ Eigen/src/Core/arch/NEON/Complex.h \
+ Eigen/src/Core/arch/Default/Settings.h \
  Eigen/src/Core/arch/Default/GenericPacketMathFunctions.h \
  Eigen/src/Core/functors/TernaryFunctors.h \
  Eigen/src/Core/functors/BinaryFunctors.h \
@@ -78,12 +79,13 @@ build/snow.o: src/snow.cc headers/snow.h Eigen/Eigen Eigen/Dense \
  Eigen/src/Core/products/TriangularSolverMatrix.h \
  Eigen/src/Core/products/TriangularSolverVector.h \
  Eigen/src/Core/BandMatrix.h Eigen/src/Core/CoreIterators.h \
- Eigen/src/Core/ConditionEstimator.h Eigen/src/Core/BooleanRedux.h \
- Eigen/src/Core/Select.h Eigen/src/Core/VectorwiseOp.h \
- Eigen/src/Core/PartialReduxEvaluator.h Eigen/src/Core/Random.h \
- Eigen/src/Core/Replicate.h Eigen/src/Core/Reverse.h \
- Eigen/src/Core/ArrayWrapper.h Eigen/src/Core/StlIterators.h \
- Eigen/src/Core/GlobalFunctions.h \
+ Eigen/src/Core/ConditionEstimator.h \
+ Eigen/src/Core/arch/NEON/GeneralBlockPanelKernel.h \
+ Eigen/src/Core/BooleanRedux.h Eigen/src/Core/Select.h \
+ Eigen/src/Core/VectorwiseOp.h Eigen/src/Core/PartialReduxEvaluator.h \
+ Eigen/src/Core/Random.h Eigen/src/Core/Replicate.h \
+ Eigen/src/Core/Reverse.h Eigen/src/Core/ArrayWrapper.h \
+ Eigen/src/Core/StlIterators.h Eigen/src/Core/GlobalFunctions.h \
  Eigen/src/Core/util/ReenableStupidWarnings.h Eigen/LU \
  Eigen/src/misc/Kernel.h Eigen/src/misc/Image.h Eigen/src/LU/FullPivLU.h \
  Eigen/src/LU/PartialPivLU.h Eigen/src/LU/Determinant.h \
@@ -203,10 +205,10 @@ Eigen/src/Core/arch/Default/Half.h:
 Eigen/src/Core/arch/Default/BFloat16.h:
 Eigen/src/Core/arch/Default/TypeCasting.h:
 Eigen/src/Core/arch/Default/GenericPacketMathFunctionsFwd.h:
-Eigen/src/Core/arch/SSE/PacketMath.h:
-Eigen/src/Core/arch/SSE/TypeCasting.h:
-Eigen/src/Core/arch/SSE/MathFunctions.h:
-Eigen/src/Core/arch/SSE/Complex.h:
+Eigen/src/Core/arch/NEON/PacketMath.h:
+Eigen/src/Core/arch/NEON/TypeCasting.h:
+Eigen/src/Core/arch/NEON/MathFunctions.h:
+Eigen/src/Core/arch/NEON/Complex.h:
 Eigen/src/Core/arch/Default/Settings.h:
 Eigen/src/Core/arch/Default/GenericPacketMathFunctions.h:
 Eigen/src/Core/functors/TernaryFunctors.h:
@@ -298,6 +300,7 @@ Eigen/src/Core/products/TriangularSolverVector.h:
 Eigen/src/Core/BandMatrix.h:
 Eigen/src/Core/CoreIterators.h:
 Eigen/src/Core/ConditionEstimator.h:
+Eigen/src/Core/arch/NEON/GeneralBlockPanelKernel.h:
 Eigen/src/Core/BooleanRedux.h:
 Eigen/src/Core/Select.h:
 Eigen/src/Core/VectorwiseOp.h:
