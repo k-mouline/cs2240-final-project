@@ -35,7 +35,7 @@ class Snow {
         ~Snow();
 
         // starting positions
-        Vector3f sphere(float radius);
+        Vector3f sphere(float radius, float off);
         Vector3f cube(float radius);
         Vector3f heart();
         Vector3f bunny();
@@ -58,6 +58,7 @@ class Snow {
         void update_deformation_gradient();
         void update_particle_velocities();
         void compute_particle_based_collisions();
+        void NewFunction();
         void update_particle_positions();
         void update();
 
@@ -87,7 +88,7 @@ class Snow {
         float m_poissons_ratio = 0.2;
         float m_lambda_0 = (m_youngs_modulus * m_poissons_ratio) / ((1 + m_poissons_ratio) * (1 - 2 * m_poissons_ratio));
         float m_mu_0 = m_youngs_modulus / (2 * (1 + m_poissons_ratio));
-        float m_compression = 2.5e-2;
+        float m_compression = 1.9e-2;
         float m_stretch = 7.5e-3;
         float m_restitution = 0.05;
 };

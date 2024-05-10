@@ -13,14 +13,14 @@
     omp_out += omp_in) \
     initializer(omp_priv = Eigen::Matrix3f::Zero())
 
-Vector3f Snow::sphere(float radius) {
+Vector3f Snow::sphere(float radius, float off) {
     float theta =  M_PI * (rand() / (float)RAND_MAX);
     float phi = 2.f * M_PI * (rand() / (float)RAND_MAX);
     float r = radius * pow((rand() / (float)RAND_MAX), 1.f / 3.f);
     float x = r * sin(theta) * cos(phi);
     float y = r * sin(theta) * sin(phi);
     float z = r * cos(theta);
-    return Vector3f(x, y, z);
+    return Vector3f(x+off, y, z);
 }
 
 Vector3f Snow::cube(float radius) {
@@ -47,12 +47,29 @@ Snow::Snow(int num_frames, int num_particles, int grid_size, string shape) :
     m_num_frames(num_frames), m_num_particles(num_particles), m_grid_size(grid_size) {
     m_particles = std::vector<Particle*>();
     m_grid = std::vector<GridCell*>(m_grid_size * m_grid_size * m_grid_size);
-
+    bool another_ball = true;
+    float off;
+    if (!another_ball) {
+        off = 0.0f;
+    } else {
+        off = 0.3f;
+    }
     for (int i = 0; i < m_num_particles; i++) {
+        if (another_ball) {
+            Particle* p2 = new Particle;
+            p2->id = i + m_num_particles; // Assign unique IDs for the second set
+            p2->position = sphere(0.05f, -off);
+            p2->velocity = Vector3f(1.2, 0, 0); // for wall 
+            p2->mass = 0.1f;
+            p2->deformation_gradient_elastic = Matrix3f::Identity();
+            p2->deformation_gradient_plastic = Matrix3f::Identity();
+            m_particles.push_back(p2);
+        }
         Particle* p = new Particle;
         p->id = i;
         if (shape == "sphere")
-            p->position = sphere(0.25f);
+            p->position = sphere(0.05f, off);
+            // p->position = sphere(0.2f);
         else if (shape == "cube")
             p->position = cube(0.25f);
         else if (shape == "heart")
@@ -60,13 +77,15 @@ Snow::Snow(int num_frames, int num_particles, int grid_size, string shape) :
         else if (shape == "bunny")
             p->position = bunny();
         else
-            p->position = sphere(0.1f); // changed from 0.1
-        p->velocity = Vector3f::Zero();
-        // p->velocity = Vector3f(-5, 0, 0);
+            p->position = sphere(0.05f, off); // changed from 0.1
+        // p->velocity = Vector3f::Zero(); // for collisions
+        p->velocity = Vector3f(-1.2, 0, 0); // for wall 
         p->mass = 0.1f;
         p->deformation_gradient_elastic = Matrix3f::Identity();
         p->deformation_gradient_plastic = Matrix3f::Identity();
         m_particles.push_back(p);
+
+
     }
 
     int totalCells = m_grid_size * m_grid_size * m_grid_size;
@@ -77,6 +96,9 @@ Snow::Snow(int num_frames, int num_particles, int grid_size, string shape) :
         cell->velocity = Vector3f::Zero();
         cell->force = Vector3f::Zero();
         m_grid[index] = cell;
+    }
+    if (another_ball) {
+        m_num_particles *=2;
     }
 }
 
@@ -334,40 +356,75 @@ void Snow::compute_grid_based_collisions() {
                 }
             }
         }
-        // if (grid_pos.x() <= floor_height){
-        //     Vector3f v_rel = cell->velocity_star;
-        //     Vector3f normal = Vector3f(1.0f, 0, 0);
-        //     float vn = v_rel.dot(normal);
-
-        //     if (vn < 0) {
-        //         Vector3f vt = v_rel - vn * normal;
-        //         if (vt.norm() <= -mu * vn) {
-        //             cell->velocity_star = Vector3f::Zero();
-        //         } else {
-        //             cell->velocity_star = vt + mu * vn * vt.normalized();
-        //         }
-        //     }
-        // }
-        const float sphere_radius = 0.2f;
-        const Vector3f sphere_centroid(0, 0, -0.4); 
-
-        Vector3f relative_pos = grid_pos - sphere_centroid; 
-        if (relative_pos.norm() <= sphere_radius) {
-            // Calculate relative velocity
-            Vector3f v_rel = cell->velocity;
-            float vn = v_rel.dot(relative_pos.normalized());
+        // for wall collisions
+        if (grid_pos.x() <= floor_height){
+            Vector3f v_rel = cell->velocity_star;
+            Vector3f normal = Vector3f(1.0f, 0, 0);
+            float vn = v_rel.dot(normal);
 
             if (vn < 0) {
-                v_rel -= vn * relative_pos.normalized() * m_restitution;
-                Vector3f vt = v_rel - vn * relative_pos.normalized();
-                float vt_norm = vt.norm();
-                if (vt_norm > 0) {
-                    float friction_factor = mu * vn / vt_norm;
-                    v_rel -= friction_factor * vt;
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    cell->velocity_star = Vector3f::Zero();
+                } else {
+                    cell->velocity_star = vt + mu * vn * vt.normalized();
                 }
-                cell->velocity = v_rel;
             }
         }
+
+
+
+
+        for (int i = 0; i < m_num_particles; ++i) {
+        Particle* particle1 = m_particles[i];
+            for (int j = i + 1; j < m_num_particles; ++j) {
+                Particle* particle2 = m_particles[j];
+                // Check if particles belong to different spheres
+                if ((particle1->id < m_num_particles/2 && particle2->id >= m_num_particles/2) ||
+                    (particle2->id < m_num_particles /2&& particle1->id >= m_num_particles/2)) {
+                    // Calculate the distance between the centers of the particles
+                    float distance = (particle1->position - particle2->position).norm();
+                    float sum_radii = 2 * 0.05; // Assuming all particles have the same radius
+
+                    // If particles are overlapping, handle collision
+                    if (distance < 0.01) {
+                        // Calculate relative velocity
+                        Vector3f relative_velocity = particle2->position - particle1->position;
+
+                        // Calculate impulse (change in momentum)
+                        Vector3f impulse = (0.00171) * relative_velocity;
+                        impulse[1] += 0.00001;
+
+                        // Update velocities based on masses
+                        particle1->velocity -= impulse; // Vector3f{.0000529,0,0.000001}; // Update velocity of particle 1
+                        particle2->velocity += impulse; //Vector3f{.0000529,0,-0.000001}; // Update velocity of particle 2
+                    }
+                }
+            }
+        }
+
+
+
+        // const float sphere_radius = 0.2f;
+        // const Vector3f sphere_centroid(0, 0, -0.4); 
+
+        // Vector3f relative_pos = grid_pos - sphere_centroid; 
+        // if (relative_pos.norm() <= sphere_radius) {
+        //     // Calculate relative velocity
+        //     Vector3f v_rel = cell->velocity;
+        //     float vn = v_rel.dot(relative_pos.normalized());
+
+        //     if (vn < 0) {
+        //         v_rel -= vn * relative_pos.normalized() * m_restitution;
+        //         Vector3f vt = v_rel - vn * relative_pos.normalized();
+        //         float vt_norm = vt.norm();
+        //         if (vt_norm > 0) {
+        //             float friction_factor = mu * vn / vt_norm;
+        //             v_rel -= friction_factor * vt;
+        //         }
+        //         cell->velocity = v_rel;
+        //     }
+        // }
 
     }
 }
@@ -537,41 +594,75 @@ void Snow::compute_particle_based_collisions() {
                 }
             }
         }
-        const float sphere_radius = 0.2f;
-        const Vector3f sphere_centroid(0, 0, -0.4); 
-        Vector3f relative_pos = particle->position - sphere_centroid;
-        if (relative_pos.norm() <= sphere_radius) {
-            
-            Vector3f v_rel = particle->velocity;
-            float vn = v_rel.dot(relative_pos.normalized());
 
-            if (vn < 0) {
-                v_rel -= vn * relative_pos.normalized() * m_restitution;
-                Vector3f vt = v_rel - vn * relative_pos.normalized();
-                float vt_norm = vt.norm();
-                if (vt_norm > 0) {
-                    float friction_factor = mu * vn / vt_norm;
-                    v_rel -= friction_factor * vt;
+
+
+        for (int i = 0; i < m_num_particles; ++i) {
+        Particle* particle1 = m_particles[i];
+            for (int j = i + 1; j < m_num_particles; ++j) {
+                Particle* particle2 = m_particles[j];
+                // Check if particles belong to different spheres
+                if ((particle1->id < m_num_particles/2 && particle2->id >= m_num_particles/2) ||
+                    (particle2->id < m_num_particles/2 && particle1->id >= m_num_particles/2)) {
+                    // Calculate the distance between the centers of the particles
+                    float distance = (particle1->position - particle2->position).norm();
+                    float sum_radii = 2 * 0.05; // Assuming all particles have the same radius
+
+                    // If particles are overlapping, handle collision
+                    if (distance < 0.01) {
+                        // Calculate relative velocity
+                        Vector3f relative_velocity = particle2->position - particle1->position;
+
+                        // Calculate impulse (change in momentum)
+                        Vector3f impulse = (0.00171) * relative_velocity;
+                        impulse[1] += 0.00001;
+
+                        // Update velocities based on masses
+                        particle1->velocity -= impulse;//Vector3f{.0000529,0,0.000001}; // Update velocity of particle 1
+                        particle2->velocity += impulse;//Vector3f{.0000529,0,-0.000001}; // Update velocity of particle 2
+                    }
                 }
-
-                particle->velocity = v_rel;
             }
-            particle->position = sphere_centroid + sphere_radius * relative_pos.normalized();
         }
-        // if (particle->position.x() <= floor_height){
+
+
+        // const float sphere_radius = 0.2f;
+        // const Vector3f sphere_centroid(0, 0, -0.4); 
+        // Vector3f relative_pos = particle->position - sphere_centroid;
+        // if (relative_pos.norm() <= sphere_radius) {
+            
         //     Vector3f v_rel = particle->velocity;
-        //     Vector3f normal = Vector3f(1.0f, 0, 0);
-        //     float vn = v_rel.dot(normal);
+        //     float vn = v_rel.dot(relative_pos.normalized());
 
         //     if (vn < 0) {
-        //         Vector3f vt = v_rel - vn * normal;
-        //         if (vt.norm() <= -mu * vn) {
-        //             particle->velocity = Vector3f::Zero();
-        //         } else {
-        //             particle->velocity = vt + mu * vn * vt.normalized();
+        //         v_rel -= vn * relative_pos.normalized() * m_restitution;
+        //         Vector3f vt = v_rel - vn * relative_pos.normalized();
+        //         float vt_norm = vt.norm();
+        //         if (vt_norm > 0) {
+        //             float friction_factor = mu * vn / vt_norm;
+        //             v_rel -= friction_factor * vt;
         //         }
+
+        //         particle->velocity = v_rel;
         //     }
+        //     particle->position = sphere_centroid + sphere_radius * relative_pos.normalized();
         // }
+
+        // wall??
+        if (particle->position.x() <= floor_height){
+            Vector3f v_rel = particle->velocity;
+            Vector3f normal = Vector3f(1.0f, 0, 0);
+            float vn = v_rel.dot(normal);
+
+            if (vn < 0) {
+                Vector3f vt = v_rel - vn * normal;
+                if (vt.norm() <= -mu * vn) {
+                    particle->velocity = Vector3f::Zero();
+                } else {
+                    particle->velocity = vt + mu * vn * vt.normalized();
+                }
+            }
+        }
     }
 }
 

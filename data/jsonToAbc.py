@@ -22,10 +22,10 @@ def convert_json_to_abc(json_file, abc_file):
     scene.root_node.children.append(ground_node)
 
     # Create a sphere node
-    sphere_node = assimp.Node()
-    sphere_node.name = "ball"
-    sphere_node.transformation = assimp.Matrix4x4(data['ball']['position'])
-    scene.root_node.children.append(sphere_node)
+    # sphere_node = assimp.Node()
+    # sphere_node.name = "ball"
+    # sphere_node.transformation = assimp.Matrix4x4(data['ball']['position'])
+    # scene.root_node.children.append(sphere_node)
     
     # Create particle nodes
     for particle_data in data['particles']:

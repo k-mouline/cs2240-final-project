@@ -56,6 +56,19 @@ def setup_ground(ground_data):
   mat.diffuse_color = ground_data['material']['color']
   ground.data.materials.append(mat)
 
+
+def setup_wall(wall_data):
+  bpy.ops.mesh.primitive_plane_add(size=1)
+  wall = bpy.context.object
+  wall.name = "wall"
+  wall.location = tuple(wall_data['position'])
+  wall.scale = (wall_data['scale'])
+  wall.rotation_euler = (0, 0, 1.5708)
+
+  mat = bpy.data.materials.new(name="Wall_Material")
+  mat.diffuse_color = wall_data['material']['color']
+  wall.data.materials.append(mat)
+
 def export_alembic(filepath):
   bpy.ops.wm.alembic_export(filepath=filepath)
 
@@ -96,7 +109,8 @@ def main():
     create_particle(particle, mat)
 
   setup_ground(data['ground'])
-  setup_sphere(data['ball'])
+  # setup_sphere(data['ball'])
+  # setup_wall(data['wall'])
   print("Exporting Alembic file...")
   export_alembic(bpy.path.abspath('//data/exported_scene.abc'))
   print("Alembic file exported successfully!")
